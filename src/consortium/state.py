@@ -24,7 +24,7 @@ class CLAReview(TypedDict, total=False):
 
 class ConsortiumState(TypedDict, total=False):
     """State for the consortium graph.
-    
+
     Attributes:
         query: The user's query
         context: Additional context for the query
@@ -36,6 +36,9 @@ class ConsortiumState(TypedDict, total=False):
         iteration_count: Number of iterations performed
         cla_review: CLA temporal robustness review
         cla_gate_status: Status of CLA gate (OPEN/CLOSED/PENDING)
+        memory_retrievals: Similar historical cases retrieved before agent execution
+        case_id: ID of stored case (for feedback/outcome updates)
+        retrieval_metadata: Metadata about memory retrieval (quality, cold-start status)
     """
     query: str
     context: Dict[str, Any]
@@ -49,6 +52,10 @@ class ConsortiumState(TypedDict, total=False):
     # CLA fields
     cla_review: Optional[CLAReview]
     cla_gate_status: Literal["OPEN", "CLOSED", "PENDING"]
+    # Memory fields
+    memory_retrievals: List[Dict[str, Any]]  # Similar historical cases
+    case_id: Optional[str]  # ID of stored case for feedback
+    retrieval_metadata: Optional[Dict[str, Any]]  # Retrieval quality info
 
 
 def create_initial_state(
@@ -56,11 +63,11 @@ def create_initial_state(
     context: Optional[Dict[str, Any]] = None
 ) -> ConsortiumState:
     """Create initial state for consortium graph.
-    
+
     Args:
         query: User's query
         context: Optional additional context
-        
+
     Returns:
         Initial consortium state
     """
@@ -74,5 +81,8 @@ def create_initial_state(
         final_recommendation={},
         iteration_count=0,
         cla_review=None,
-        cla_gate_status="PENDING"
+        cla_gate_status="PENDING",
+        memory_retrievals=[],
+        case_id=None,
+        retrieval_metadata=None
     )

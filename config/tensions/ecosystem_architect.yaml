@@ -1,0 +1,42 @@
+# Eco-System ↔ Architect Tension Protocol Configuration
+# Resolves conflicts between compute-intensive solutions and carbon impact
+
+protocol_id: ecosystem_architect
+agents:
+  - ecosystem
+  - architect
+
+max_iterations: 3
+
+trigger:
+  architect_keywords:
+    - compute
+    - processing
+    - GPU
+    - training
+    - intensive
+    - scale
+  ecosystem_rating:
+    - BLOCK
+    - WARN
+  ecosystem_keywords:
+    - SCI
+    - carbon
+    - emissions
+    - energy
+    - degradation
+    - 100%
+
+resolution_steps:
+  - Eco-System provides SCI calculation
+  - Architect proposes carbon mitigation (scheduling, efficiency, offsets)
+  - If SCI reducible <50% → Accept with monitoring
+  - If SCI remains >100% → Architect proposes alternative OR Economist justifies
+  - If unresolvable after 3 iterations → Escalate
+
+priority: 3  # Technical constraints
+
+description: |
+  Resolves tensions between compute-intensive technical solutions and
+  carbon impact concerns. Evaluates mitigation strategies and alternative
+  approaches to balance performance with sustainability.

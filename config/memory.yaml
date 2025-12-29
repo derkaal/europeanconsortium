@@ -1,0 +1,30 @@
+chroma:
+  persist_directory: "./data/chroma"
+  collection_name: "strategic_cases"
+  
+embedding:
+  provider: "openai"
+  model: "text-embedding-3-small"
+  dimensions: 1536
+
+retrieval:
+  top_k: 3
+  similarity_threshold: 0.7
+  quality_score_threshold: 3.5
+  progressive_fallback: true
+  verified_outcome_boost: 1.5
+
+storage:
+  capture_immediate_feedback: true
+  enable_outcome_updates: true
+  max_cases: 10000  # Archive older cases beyond this
+
+# Progressive fallback thresholds
+fallback:
+  tier_1_threshold: 3.5  # Initial quality threshold
+  tier_1_penalty: 0.0
+  tier_2_threshold: 3.0  # First fallback
+  tier_2_penalty: -0.20
+  tier_3_threshold: 2.5  # Second fallback
+  tier_3_penalty: -0.25
+  cold_start_penalty: -0.15  # No cases found

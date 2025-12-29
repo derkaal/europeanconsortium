@@ -1,0 +1,28 @@
+# Jurist ↔ Philosopher Tension Protocol Configuration
+# Handles values conflicts between legal compliance and ethical principles
+
+protocol_id: jurist_philosopher
+agents:
+  - jurist
+  - philosopher
+
+max_iterations: 0  # Instant escalation
+
+trigger:
+  jurist_rating:
+    - ACCEPT
+    - ENDORSE
+  philosopher_rating: BLOCK
+
+resolution_steps:
+  - Instant escalation to human decision
+  - Generate Ethics vs Legal Compliance report
+  - No automatic resolution
+
+priority: 1  # Highest - values conflicts
+
+description: |
+  Handles fundamental values conflicts where a proposal is legally
+  compliant but ethically problematic. Requires immediate human judgment
+  as this represents a core organizational values decision that cannot
+  be automated.

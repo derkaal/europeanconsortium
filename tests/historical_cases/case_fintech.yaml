@@ -1,0 +1,27 @@
+id: case_004
+name: Fintech Cloud Infrastructure
+query: "Should our German fintech startup use US cloud providers for our payment processing platform?"
+context:
+  industry: financial_services
+  data_type: payment_data
+  regulatory_status: PSD2_licensed
+  current_location: startup_phase
+  budget_eur: 500000
+
+expected_agents:
+  - sovereign
+  - economist
+  - jurist
+
+known_considerations:
+  - PSD2 compliance requirements
+  - BaFin oversight
+  - Payment data sensitivity
+  - Startup cost constraints vs enterprise requirements
+
+validation_criteria:
+  must_mention:
+    - PSD2
+    - financial
+    - compliance
+  expected_sovereign_rating: WARN

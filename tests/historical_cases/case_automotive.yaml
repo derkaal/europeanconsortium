@@ -1,0 +1,33 @@
+id: case_001
+name: German Automotive R&D Cloud Migration
+query: "Should we migrate German automotive R&D data to AWS for AI/ML capabilities?"
+context:
+  industry: automotive
+  data_type: trade_secrets
+  current_location: on_premise_frankfurt
+  budget_eur: 2000000
+  timeline_months: 6
+  company_size: large_enterprise
+
+expected_agents:
+  - sovereign
+  - economist
+  - jurist
+
+expected_tensions:
+  - sovereign_economist
+
+known_considerations:
+  - CLOUD Act exposure for US providers
+  - GDPR data residency requirements
+  - Gaia-X sovereign alternatives exist
+  - Cost premium for EU providers estimated 30-50%
+  - Trade secrets require maximum protection
+
+validation_criteria:
+  must_mention:
+    - sovereignty
+    - CLOUD Act
+    - GDPR
+  expected_sovereign_rating: BLOCK
+  should_recommend: EU-based or hybrid solution

@@ -1,0 +1,35 @@
+id: case_003
+name: Pan-European Healthcare Data Exchange
+query: "Build a pan-European healthcare data exchange platform for medical research"
+context:
+  data_sensitivity: extreme
+  member_states: 27
+  data_types:
+    - patient_records
+    - genomic_data
+    - treatment_outcomes
+  budget_eur: 50000000
+  timeline_years: 3
+
+expected_agents:
+  - sovereign
+  - economist
+  - jurist
+
+expected_tensions:
+  - sovereign_economist
+
+known_considerations:
+  - GDPR Article 9 special categories
+  - Health data requires explicit consent
+  - Cross-border transfer complexities
+  - Schrems II implications
+  - Need for pseudonymization
+
+validation_criteria:
+  must_mention:
+    - GDPR
+    - health data
+    - consent
+  expected_jurist_rating: WARN
+  should_recommend: federated architecture or strict controls

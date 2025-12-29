@@ -1,0 +1,30 @@
+id: case_002
+name: Permanent EU Innovation Fund
+query: "Create a permanent AI research fund governed by annual committee review"
+context:
+  funding_eur: 500000000
+  governance: annual_committee_review
+  duration: permanent
+  failure_allocation: not_specified
+  political_sponsor: multiple_member_states
+
+expected_agents:
+  - sovereign
+  - economist
+  - jurist
+  - cla
+
+expected_cla_verdict: ZOMBIE_RISK
+
+known_considerations:
+  - No sunset clause means locked-in commitment
+  - Committee review is endogenous trigger (theater)
+  - No explicit failure allocation
+  - Requires unanimous consent to undo
+
+validation_criteria:
+  cla_must_fail:
+    - Commitment
+    - Trigger
+  mechanism_patch_required: true
+  must_add: sunset_clause or performance_trigger

@@ -1,0 +1,37 @@
+# Futurist ↔ All Agents Tension Protocol Configuration
+# Resolves conflicts when strategy fails in multiple future scenarios
+
+protocol_id: futurist_all
+agents:
+  - futurist
+  - all
+
+max_iterations: 3
+
+trigger:
+  futurist_rating:
+    - BLOCK
+    - WARN
+  futurist_keywords:
+    - scenario
+    - future
+    - fail
+    - 50%
+    - robustness
+    - uncertainty
+    - plausible
+
+resolution_steps:
+  - Futurist defines scenario matrix (2-4 key uncertainties)
+  - All agents re-evaluate proposal under each scenario
+  - Architect designs adaptation mechanisms
+  - Calculate Weighted Scenario Robustness Score
+  - Accept if strategy succeeds in >60% of probability-weighted scenarios
+
+priority: 5  # Future scenarios
+
+description: |
+  Resolves tensions when Futurist identifies that a strategy fails in
+  more than 50% of plausible future scenarios. Forces scenario-based
+  evaluation and design of adaptation mechanisms to ensure strategic
+  robustness across multiple possible futures.

@@ -1,0 +1,36 @@
+# Operator ↔ Strategy Agents Tension Protocol Configuration
+# Resolves conflicts between execution reality and strategic assumptions
+
+protocol_id: operator_strategy
+agents:
+  - operator
+  - strategy
+
+max_iterations: 2
+
+trigger:
+  operator_rating:
+    - BLOCK
+    - WARN
+  operator_keywords:
+    - timeline
+    - execution
+    - 2x
+    - longer
+    - unrealistic
+    - implementation
+    - duration
+
+resolution_steps:
+  - Operator provides detailed execution breakdown
+  - Strategy agents choose (a) Revise timeline, (b) Reduce scope, (c) Increase resources
+  - Economist re-evaluates ROI with realistic timeline
+  - If revised timeline makes business case negative → Reject proposal
+
+priority: 4  # Execution reality
+
+description: |
+  Resolves tensions when Operator identifies that execution timeline
+  is significantly longer (>2x) than strategy agents assumed. Forces
+  realistic assessment of implementation complexity and re-evaluation
+  of business case with accurate timelines.

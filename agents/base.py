@@ -1,0 +1,447 @@
+"""
+Base Agent Class for European Strategy Consortium
+
+Defines the abstract interface that all specialized agents must implement.
+Each agent embodies a distinct worldview and provides adversarial critique
+from their specialized domain.
+"""
+
+from abc import ABC, abstractmethod
+from typing import Dict, Any, List, Optional, Literal
+from datetime import datetime
+import re
+
+
+class AgentResponse:
+    """Structured response from an agent"""
+    
+    def __init__(
+        self,
+        agent_id: str,
+        rating: Literal["BLOCK", "WARN", "ACCEPT", "ENDORSE"],
+        confidence: float,
+        reasoning: str,
+        attack_vector: Optional[str] = None,
+        evidence: Optional[List[str]] = None,
+        mitigation_plan: Optional[str] = None,
+        timestamp: Optional[datetime] = None
+    ):
+        self.agent_id = agent_id
+        self.rating = rating
+        self.confidence = confidence
+        self.reasoning = reasoning
+        self.attack_vector = attack_vector
+        self.evidence = evidence or []
+        self.mitigation_plan = mitigation_plan
+        self.mitigation_accepted = None
+        self.rejection_reason = None
+        self.timestamp = timestamp or datetime.now()
+        
+        # Metadata (filled by provider)
+        self.provider_used = ""
+        self.latency_ms = 0.0
+        self.token_count = 0
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary for state storage"""
+        return {
+            "agent_id": self.agent_id,
+            "rating": self.rating,
+            "confidence": self.confidence,
+            "reasoning": self.reasoning,
+            "attack_vector": self.attack_vector,
+            "evidence": self.evidence,
+            "mitigation_plan": self.mitigation_plan,
+            "mitigation_accepted": self.mitigation_accepted,
+            "rejection_reason": self.rejection_reason,
+            "timestamp": self.timestamp.isoformat(),
+            "provider_used": self.provider_used,
+            "latency_ms": self.latency_ms,
+            "token_count": self.token_count
+        }
+
+
+class Agent(ABC):
+    """
+    Abstract base class for all consortium agents.
+    
+    Each agent embodies a distinct worldview with specialized knowledge,
+    attack patterns, and acceptance criteria. Agents provide adversarial
+    critique to ensure comprehensive strategic analysis.
+    
+    Example Usage:
+        >>> from agents.sovereign import SovereignAgent
+        >>> config = load_yaml("config/agents/sovereign.yaml")
+        >>> agent = SovereignAgent(config)
+        >>> response = agent.invoke(state)
+        >>> print(f"{agent.name}: {response.rating} (confidence: {response.confidence})")
+    """
+    
+    def __init__(self, config: Dict[str, Any]):
+        """
+        Initialize agent with configuration.
+        
+        Args:
+            config: Agent configuration dictionary containing:
+                - agent_id: Unique identifier (e.g., "sovereign")
+                - name: Display name (e.g., "The Sovereign")
+                - mandate: Core mandate statement
+                - system_prompt: Full system prompt defining worldview
+                - red_lines: List of non-negotiable constraints
+                - acceptance_criteria: Dict mapping ratings to criteria
+                - knowledge_domains: List of domain expertise areas
+        """
+        self.agent_id = config["agent_id"]
+        self.name = config["name"]
+        self.mandate = config["mandate"]
+        self.system_prompt = config["system_prompt"]
+        self.red_lines = config["red_lines"]
+        self.acceptance_criteria = config["acceptance_criteria"]
+        self.knowledge_domains = config.get("knowledge_domains", [])
+        
+        # Initialize LLM provider (lazy loading)
+        self._llm_provider = None
+    
+    def _get_llm_provider(self):
+        """Get LLM provider instance (lazy initialization)."""
+        if self._llm_provider is None:
+            from src.consortium.llm_provider import get_llm_provider
+            self._llm_provider = get_llm_provider()
+        return self._llm_provider
+    
+    def _invoke_llm(self, state: Dict[str, Any]) -> str:
+        """
+        Invoke LLM with system prompt and user message.
+        
+        PATTERN FROM LANGCHAIN RESEARCH:
+        - Build user message with full context
+        - Use SystemMessage + HumanMessage pattern
+        - Provider handles failover automatically
+        
+        Args:
+            state: Consortium state with query and context
+            
+        Returns:
+            Raw LLM response text
+            
+        Raises:
+            AgentInvocationError: If LLM invocation fails
+        """
+        import logging
+        import time
+        
+        logger = logging.getLogger(__name__)
+        
+        try:
+            # Extract query and context from state
+            query = state.get("query", "")
+            context = state.get("context", {})
+            memory_cases = state.get("memory_retrievals", [])
+            
+            # Build user message with full context
+            user_message = self._build_prompt(
+                query=query,
+                query_context=context,
+                memory_cases=memory_cases
+            )
+            
+            # Get LLM provider
+            provider = self._get_llm_provider()
+            
+            # Invoke with timing
+            start_time = time.time()
+            
+            response = provider.invoke(
+                system_prompt=self.system_prompt,
+                user_message=user_message,
+                agent_id=self.agent_id
+            )
+            
+            latency_ms = (time.time() - start_time) * 1000
+            
+            logger.info(
+                f"LLM invocation for {self.agent_id} completed "
+                f"in {latency_ms:.0f}ms"
+            )
+            
+            return response
+            
+        except Exception as e:
+            logger.error(f"LLM invocation failed for {self.agent_id}: {e}")
+            raise AgentInvocationError(
+                f"Failed to invoke LLM for {self.agent_id}: {e}"
+            )
+    
+    @abstractmethod
+    def invoke(self, state: Dict[str, Any]) -> AgentResponse:
+        """
+        Process query and return structured rating.
+        
+        This is the main entry point called by the consortium graph.
+        Implementations should:
+        1. Build context-aware prompt
+        2. Invoke LLM (with provider failover)
+        3. Parse response into AgentResponse
+        4. Apply domain-specific validation
+        
+        Args:
+            state: Complete consortium state containing query, context,
+                   memory retrievals, current proposal, etc.
+        
+        Returns:
+            AgentResponse with rating, confidence, reasoning, and evidence
+        
+        Raises:
+            AgentInvocationError: If agent fails to generate valid response
+        """
+        pass
+    
+    def _build_prompt(
+        self,
+        query: str,
+        query_context: Dict[str, Any],
+        proposal: Optional[Dict[str, Any]] = None,
+        memory_cases: Optional[List[Dict[str, Any]]] = None,
+        iteration: int = 1
+    ) -> str:
+        """
+        Construct complete prompt with all relevant context.
+        
+        This method assembles:
+        - Agent role and mandate
+        - System prompt defining worldview
+        - Non-negotiable red lines
+        - Acceptance criteria
+        - Historical precedents from memory
+        - Current query and context
+        - Proposal under review (if in debate phase)
+        - Response format instructions
+        
+        Args:
+            query: User's original query
+            query_context: Contextual information (industry, company size, etc.)
+            proposal: Current proposal under debate (optional)
+            memory_cases: Retrieved historical cases (optional)
+            iteration: Current iteration number in debate
+        
+        Returns:
+            Complete prompt string ready for LLM invocation
+        """
+        prompt_parts = []
+        
+        # Header: Agent role and identity
+        prompt_parts.append(f"# {self.name}")
+        prompt_parts.append(f"\n{self.system_prompt}\n")
+        
+        # Core mandate
+        prompt_parts.append("## Your Mandate")
+        prompt_parts.append(self.mandate)
+        
+        # Non-negotiable red lines
+        if self.red_lines:
+            prompt_parts.append("\n## Non-Negotiable Red Lines")
+            prompt_parts.append("You must BLOCK any proposal that violates these constraints:")
+            for red_line in self.red_lines:
+                prompt_parts.append(f"- {red_line}")
+        
+        # Acceptance criteria
+        prompt_parts.append("\n## Rating Framework")
+        prompt_parts.append("Use this framework to rate proposals:")
+        for rating, criteria in self.acceptance_criteria.items():
+            prompt_parts.append(f"- **{rating.upper()}**: {criteria}")
+        
+        # Historical precedents (if available)
+        if memory_cases:
+            prompt_parts.append("\n## Historical Precedents")
+            prompt_parts.append(
+                "Consider these past cases when evaluating the current query. "
+                "Learn from successful approaches and failures:"
+            )
+            for i, case in enumerate(memory_cases[:3], 1):
+                similarity = case.get('similarity_score', 0.0)
+                query_text = case.get('query', 'N/A')
+                outcome = case.get('outcome', {}).get('status', 'unknown')
+                
+                prompt_parts.append(f"\n### Case {i} (Similarity: {similarity:.2f}, Outcome: {outcome})")
+                prompt_parts.append(f"Query: {query_text}")
+                
+                # Include relevant learnings if available
+                if 'final_recommendation' in case:
+                    rec = case['final_recommendation'].get('recommendation', '')
+                    if rec:
+                        prompt_parts.append(f"Approach: {rec[:200]}...")
+        
+        # Current query context
+        prompt_parts.append("\n## Current Query")
+        prompt_parts.append(f"**Query**: {query}")
+        
+        if query_context:
+            prompt_parts.append("\n**Context**:")
+            for key, value in query_context.items():
+                if value:  # Only include non-empty values
+                    prompt_parts.append(f"- {key.replace('_', ' ').title()}: {value}")
+        
+        # Proposal under review (if in debate/iteration phase)
+        if proposal:
+            version = proposal.get('version', 1)
+            proposer = proposal.get('proposer', 'Unknown')
+            content = proposal.get('content', '')
+            
+            prompt_parts.append(f"\n## Proposal Under Review (Version {version})")
+            prompt_parts.append(f"**Proposed by**: {proposer}")
+            prompt_parts.append(f"\n{content}")
+            
+            if iteration > 1:
+                prompt_parts.append(
+                    f"\n*Note: This is iteration {iteration}. "
+                    "Consider your previous position and whether the revised proposal addresses your concerns.*"
+                )
+        
+        # Response format instructions
+        prompt_parts.append("\n## Your Response")
+        prompt_parts.append(
+            "Provide your assessment in this exact format:\n"
+            "\n"
+            "RATING: [BLOCK | WARN | ACCEPT | ENDORSE]\n"
+            "CONFIDENCE: [0.0-1.0]\n"
+            "REASONING: [Your detailed analysis from your specialized perspective]\n"
+            "ATTACK_VECTOR: [If BLOCK/WARN, identify the specific vulnerability or risk]\n"
+            "EVIDENCE: [Cite specific regulations, data, or domain knowledge that supports your position]\n"
+            "MITIGATION_PLAN: [If WARN, propose specific actions to address your concerns]\n"
+            "\n"
+            "**Critical Instructions**:\n"
+            "- Be specific and cite concrete evidence from your knowledge domains\n"
+            "- If you identify problems, propose solutions when possible\n"
+            "- Your job is to find issues others miss, but also to help solve them\n"
+            "- Provide confidence level honestly - uncertainty is valuable information\n"
+            "- Reference your non-negotiable red lines when they apply"
+        )
+        
+        return "\n".join(prompt_parts)
+    
+    def _parse_response(self, raw_response: str) -> AgentResponse:
+        """
+        Parse LLM output into structured AgentResponse.
+        
+        Extracts:
+        - RATING: BLOCK, WARN, ACCEPT, or ENDORSE
+        - CONFIDENCE: Float between 0.0 and 1.0
+        - REASONING: Main analysis text
+        - ATTACK_VECTOR: Specific vulnerability identified (optional)
+        - EVIDENCE: Supporting citations (optional)
+        - MITIGATION_PLAN: Proposed solutions for WARN ratings (optional)
+        
+        Args:
+            raw_response: Raw text from LLM
+        
+        Returns:
+            Structured AgentResponse object
+        
+        Raises:
+            ValueError: If response cannot be parsed or is invalid
+        """
+        # Extract rating
+        rating_match = re.search(
+            r"RATING:\s*(BLOCK|WARN|ACCEPT|ENDORSE)",
+            raw_response,
+            re.IGNORECASE
+        )
+        if not rating_match:
+            raise ValueError(
+                f"Could not extract RATING from {self.agent_id} response. "
+                f"Response must include 'RATING: [BLOCK|WARN|ACCEPT|ENDORSE]'"
+            )
+        rating = rating_match.group(1).upper()
+        
+        # Extract confidence
+        confidence_match = re.search(
+            r"CONFIDENCE:\s*([0-9]*\.?[0-9]+)",
+            raw_response,
+            re.IGNORECASE
+        )
+        if confidence_match:
+            confidence = float(confidence_match.group(1))
+            confidence = max(0.0, min(1.0, confidence))  # Clamp to [0, 1]
+        else:
+            # Default confidence based on rating
+            confidence = 0.8 if rating in ["BLOCK", "ENDORSE"] else 0.6
+        
+        # Extract reasoning (everything after REASONING: until next section or end)
+        reasoning_match = re.search(
+            r"REASONING:\s*(.+?)(?=\n(?:ATTACK_VECTOR:|EVIDENCE:|MITIGATION_PLAN:|$))",
+            raw_response,
+            re.IGNORECASE | re.DOTALL
+        )
+        reasoning = reasoning_match.group(1).strip() if reasoning_match else raw_response
+        
+        # Extract attack vector (optional, mainly for BLOCK/WARN)
+        attack_match = re.search(
+            r"ATTACK_VECTOR:\s*(.+?)(?=\n(?:EVIDENCE:|MITIGATION_PLAN:|$))",
+            raw_response,
+            re.IGNORECASE | re.DOTALL
+        )
+        attack_vector = attack_match.group(1).strip() if attack_match else None
+        
+        # Extract evidence (optional)
+        evidence_match = re.search(
+            r"EVIDENCE:\s*(.+?)(?=\n(?:MITIGATION_PLAN:|$))",
+            raw_response,
+            re.IGNORECASE | re.DOTALL
+        )
+        evidence = []
+        if evidence_match:
+            evidence_text = evidence_match.group(1).strip()
+            # Split by newlines or bullet points
+            evidence = [
+                line.strip().lstrip('-•*').strip()
+                for line in evidence_text.split('\n')
+                if line.strip() and not line.strip().startswith('MITIGATION')
+            ]
+        
+        # Extract mitigation plan (optional, mainly for WARN)
+        mitigation_match = re.search(
+            r"MITIGATION_PLAN:\s*(.+?)$",
+            raw_response,
+            re.IGNORECASE | re.DOTALL
+        )
+        mitigation_plan = mitigation_match.group(1).strip() if mitigation_match else None
+        
+        # Validation: WARN should have mitigation plan
+        if rating == "WARN" and not mitigation_plan:
+            # Extract from reasoning as fallback
+            if "recommend" in reasoning.lower() or "suggest" in reasoning.lower():
+                mitigation_plan = "See reasoning for mitigation suggestions"
+        
+        return AgentResponse(
+            agent_id=self.agent_id,
+            rating=rating,
+            confidence=confidence,
+            reasoning=reasoning,
+            attack_vector=attack_vector,
+            evidence=evidence,
+            mitigation_plan=mitigation_plan
+        )
+    
+    def _validate_response(self, response: AgentResponse) -> AgentResponse:
+        """
+        Apply agent-specific validation to response.
+        
+        Override this method to implement domain-specific validation logic.
+        For example, Sovereign might never ENDORSE solutions with vendor lock-in.
+        
+        Args:
+            response: Parsed agent response
+        
+        Returns:
+            Validated (possibly modified) response
+        """
+        # Base implementation: no additional validation
+        return response
+    
+    def __repr__(self) -> str:
+        return f"<{self.__class__.__name__} id={self.agent_id} name='{self.name}'>"
+
+
+class AgentInvocationError(Exception):
+    """Raised when agent fails to generate valid response"""
+    pass

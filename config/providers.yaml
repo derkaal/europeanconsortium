@@ -1,0 +1,38 @@
+providers:
+  - name: anthropic
+    priority: 1  # Primary provider
+    api_key_env: ANTHROPIC_API_KEY
+    models:
+      default: claude-sonnet-4-20250514
+    timeout_seconds: 30
+    max_retries: 2
+    
+  - name: mistral
+    priority: 2  # Secondary (European sovereignty preference)
+    api_key_env: MISTRAL_API_KEY
+    models:
+      default: mistral-large-latest
+    timeout_seconds: 30
+    max_retries: 2
+    
+  - name: openai
+    priority: 3  # Tertiary fallback
+    api_key_env: OPENAI_API_KEY
+    models:
+      default: gpt-4-turbo-preview
+    timeout_seconds: 30
+    max_retries: 2
+  
+  - name: gemini
+    priority: 4  # Quaternary fallback
+    api_key_env: GOOGLE_API_KEY
+    models:
+      default: gemini-pro
+    timeout_seconds: 30
+    max_retries: 2
+
+retry_strategy:
+  base_delay_seconds: 1.0  # Initial delay
+  exponential_backoff: true  # 1s, 2s, 4s, ...
+  max_delay_seconds: 10.0  # Cap backoff at 10s
+  jitter: 0.1  # Add ±10% random jitter

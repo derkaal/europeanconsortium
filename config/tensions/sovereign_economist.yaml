@@ -1,0 +1,35 @@
+# Sovereign ↔ Economist Tension Protocol Configuration
+# Resolves conflicts between sovereignty requirements and cost optimization
+
+protocol_id: sovereign_economist
+agents:
+  - sovereign
+  - economist
+
+max_iterations: 4
+
+trigger:
+  sovereign_rating: BLOCK
+  sovereign_keywords:
+    - EU-only
+    - sovereignty
+    - data residency
+    - GDPR
+    - European data
+  economist_rating: BLOCK
+  economist_threshold: 0.40  # Cost premium threshold (40%)
+
+resolution_steps:
+  - Calculate trust premium potential
+  - Quantify sovereignty risk (probability × impact)
+  - Compare (Trust Premium + Risk Mitigation Value) vs Cost Delta
+  - If Trust Premium + Risk > Cost Delta → Accept Sovereign approach
+  - If Cost Delta > Combined Value → Request hybrid from Architect
+  - If unresolvable after 4 iterations → Escalate to human
+
+priority: 2  # Core business decisions
+
+description: |
+  Resolves tensions between data sovereignty requirements and cost
+  optimization. Quantifies trust capital and risk mitigation value
+  against cost premiums to make informed trade-offs.

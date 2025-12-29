@@ -1,0 +1,29 @@
+id: case_005
+name: AI-Powered Hiring System
+query: "Implement an AI system for automated CV screening and candidate ranking for our EU operations"
+context:
+  industry: human_resources
+  scope: eu_wide
+  data_type: personal_data
+  ai_purpose: employment_decisions
+  company_size: multinational
+
+expected_agents:
+  - sovereign
+  - economist
+  - jurist
+
+known_considerations:
+  - EU AI Act High-Risk classification (Annex III)
+  - Requires conformity assessment
+  - GDPR purpose limitation
+  - Bias audit requirements
+  - Human oversight mandatory
+
+validation_criteria:
+  must_mention:
+    - AI Act
+    - High-Risk
+    - conformity
+  expected_jurist_rating: WARN
+  should_recommend: compliance pathway before deployment

@@ -1,0 +1,101 @@
+# European Strategy Consortium - System Configuration
+
+graph:
+  max_iterations: 20
+  agent_timeout: 30  # seconds
+  complexity_overload_threshold: 7  # max agents
+  
+routing:
+  always_include:
+    - economist
+    - architect
+  max_agents: 7
+  
+  # Keyword mapping for agent routing
+  keyword_map:
+    sovereign:
+      - data
+      - cloud
+      - sovereignty
+      - gdpr
+      - privacy
+      - security
+      - compliance
+    economist:
+      - cost
+      - budget
+      - roi
+      - investment
+      - financial
+      - economic
+      - pricing
+    jurist:
+      - legal
+      - compliance
+      - regulation
+      - law
+      - contract
+      - liability
+    ecosystem:
+      - carbon
+      - sustainability
+      - environmental
+      - green
+      - climate
+      - energy
+    architect:
+      - architecture
+      - design
+      - system
+      - technical
+      - infrastructure
+      - scalability
+    futurist:
+      - future
+      - trend
+      - innovation
+      - emerging
+      - disruption
+    philosopher:
+      - ethics
+      - values
+      - principles
+      - moral
+      - fairness
+    operator:
+      - operations
+      - deployment
+      - maintenance
+      - monitoring
+      - reliability
+    strategist:
+      - strategy
+      - planning
+      - roadmap
+      - vision
+      - competitive
+    diplomat:
+      - stakeholder
+      - communication
+      - negotiation
+      - consensus
+      - partnership
+    guardian:
+      - risk
+      - security
+      - threat
+      - vulnerability
+      - protection
+
+convergence:
+  max_warn_ratings: 2
+  min_confidence: 70  # percentage
+  min_positive_percentage: 60  # percentage of ACCEPT/ENDORSE ratings
+  
+synthesis:
+  pyramid_levels:
+    - recommendation
+    - supporting_arguments
+    - evidence
+    - action_items
+    - decision_provenance

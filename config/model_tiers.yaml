@@ -1,0 +1,126 @@
+# Model Tier Configuration for European Strategy Consortium
+# Strategy:
+# - Reasoning: EU-first (Mistral Large) for agent analysis
+# - Standard/Fast: Cheapest (Gemini Flash) for synthesis/routing
+# - Embedding: Cheapest (Google Embedding) for memory
+
+model_tiers:
+  reasoning:
+    description: "Complex analysis, adversarial debate - EU SOVEREIGN FIRST"
+    primary:
+      provider: mistral
+      model: mistral-large-latest
+      max_tokens: 4096
+      temperature: 0.7
+    fallback_1:
+      provider: anthropic
+      model: claude-3-5-sonnet-20241022
+      max_tokens: 4096
+      temperature: 0.7
+    fallback_2:
+      provider: openai
+      model: gpt-4o
+      max_tokens: 4096
+      temperature: 0.7
+    cost_per_1m_tokens:
+      input: 2.00
+      output: 6.00
+    currency: EUR
+
+  standard:
+    description: "Synthesis, formatting - CHEAPEST FIRST"
+    primary:
+      provider: google
+      model: gemini-1.5-flash
+      max_tokens: 4096
+      temperature: 0.3
+    fallback_1:
+      provider: openai
+      model: gpt-4o-mini
+      max_tokens: 4096
+      temperature: 0.3
+    fallback_2:
+      provider: mistral
+      model: mistral-small-latest
+      max_tokens: 4096
+      temperature: 0.3
+    cost_per_1m_tokens:
+      input: 0.075
+      output: 0.30
+    currency: USD
+
+  fast:
+    description: "Classification, routing - CHEAPEST FIRST"
+    primary:
+      provider: google
+      model: gemini-1.5-flash
+      max_tokens: 1024
+      temperature: 0.1
+    fallback_1:
+      provider: openai
+      model: gpt-4o-mini
+      max_tokens: 1024
+      temperature: 0.1
+    fallback_2:
+      provider: mistral
+      model: mistral-small-latest
+      max_tokens: 1024
+      temperature: 0.1
+    cost_per_1m_tokens:
+      input: 0.075
+      output: 0.30
+    currency: USD
+
+  embedding:
+    description: "Vector embeddings - CHEAPEST FIRST"
+    primary:
+      provider: google
+      model: text-embedding-004
+      dimensions: 768
+    fallback_1:
+      provider: openai
+      model: text-embedding-3-small
+      dimensions: 1536
+    fallback_2:
+      provider: mistral
+      model: mistral-embed
+      dimensions: 1024
+    cost_per_1m_tokens:
+      input: 0.00625
+      output: 0.0
+    currency: USD
+
+# Task routing - maps tasks to tiers
+task_routing:
+  # Reasoning tier (EU-first: Mistral Large)
+  agent_sovereign: reasoning
+  agent_intelligence_sovereign: reasoning
+  agent_economist: reasoning
+  agent_jurist: reasoning
+  agent_architect: reasoning
+  agent_ecosystem: reasoning
+  agent_philosopher: reasoning
+  agent_ethnographer: reasoning
+  agent_technologist: reasoning
+  agent_consumer_voice: reasoning
+
+  # Standard tier (cheapest: Gemini Flash)
+  synthesizer: standard
+  cla_gate: standard
+  architect_revision: standard
+
+  # Fast tier (cheapest: Gemini Flash)
+  router: fast
+  convergence_test: fast
+
+  # Embedding tier (cheapest: Google Embedding)
+  memory_store: embedding
+  memory_retrieve: embedding
+  knowledge_retrieval: embedding
+
+# Cost tracking settings
+cost_tracking:
+  enabled: true
+  log_every_call: true
+  alert_threshold_per_query: 0.50
+  daily_budget: 100.00

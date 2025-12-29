@@ -7,6 +7,9 @@ Implements Pyramid Principle format:
 - Level 4: Decision provenance
 
 Also handles post-convergence storage in memory for future retrieval.
+
+COST OPTIMIZATION: Currently uses no LLM (ZERO-LLM = FREE) - rule-based synthesis
+If LLM-based synthesis added: Use STANDARD tier (Gemini Flash - cheapest)
 """
 
 import logging

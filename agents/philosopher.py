@@ -80,61 +80,6 @@ class PhilosopherAgent(Agent):
     
     def invoke(self, state: Dict[str, Any]) -> Dict[str, Any]:
         """Evaluate proposal from ethics perspective."""
-        prompt = self._build_prompt(state)
-        response_text = self._invoke_llm(prompt)
-        return self._parse_response(response_text)
-    
-    def _build_prompt(self, state: Dict[str, Any]) -> str:
-        """Build ethics-focused prompt."""
-        parts = [
-            "ETHICAL ALIGNMENT REVIEW REQUEST:",
-            f"\nSTRATEGIC QUERY: {state.get('query', 'No query')}",
-            f"\nCONTEXT: {state.get('context', {})}",
-        ]
-        
-        if state.get("agent_responses"):
-            parts.append("\nOTHER AGENT ASSESSMENTS:")
-            for agent_id, response in state["agent_responses"].items():
-                if agent_id != "philosopher":
-                    rating = response.get('rating', 'N/A')
-                    reasoning = response.get('reasoning', '')[:200]
-                    parts.append(f"\n{agent_id.upper()}: {rating}")
-                    parts.append(f"  {reasoning}...")
-        
-        parts.append("""
-
-INSTRUCTIONS:
-Analyze this proposal from an ethical and value alignment perspective.
-Consider:
-1. Alignment with human values and constitutional principles
-2. Potential for harm to users, society, or vulnerable populations
-3. Dark patterns or manipulative design elements
-4. Long-term trust capital implications
-5. Transparency and informed consent
-
-Provide your assessment using the specified format.""")
-        
-        return "\n".join(parts)
-    
-    def _parse_response(self, response_text: str) -> Dict[str, Any]:
-        """Parse Philosopher response."""
-        rating = "WARN"
-        for r in ["ENDORSE", "ACCEPT", "WARN", "BLOCK"]:
-            if r in response_text.upper():
-                rating = r
-                break
-        
-        confidence = 75
-        conf_match = re.search(
-            r"CONFIDENCE:\s*(\d+)",
-            response_text,
-            re.IGNORECASE
-        )
-        if conf_match:
-            confidence = min(100, max(0, int(conf_match.group(1))))
-        
-        return {
-            "rating": rating,
-            "confidence": confidence,
-            "reasoning": response_text
-        }
+        response_text = self._invoke_llm(state)
+        agent_response = super()._parse_response(response_text)
+        return agent_response.to_dict()

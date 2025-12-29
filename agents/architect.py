@@ -74,60 +74,9 @@ class ArchitectAgent(Agent):
     
     def invoke(self, state: Dict[str, Any]) -> Dict[str, Any]:
         """Evaluate proposal from architecture perspective."""
-        prompt = self._build_prompt(state)
-        response_text = self._invoke_llm(prompt)
-        return self._parse_response(response_text)
-    
-    def _build_prompt(self, state: Dict[str, Any]) -> str:
-        """Build architecture-focused prompt."""
-        parts = [
-            "TECHNICAL ARCHITECTURE REVIEW REQUEST:",
-            f"\nSTRATEGIC QUERY: {state.get('query', 'No query')}",
-            f"\nCONTEXT: {state.get('context', {})}",
-        ]
-        
-        if state.get("agent_responses"):
-            parts.append("\nOTHER AGENT ASSESSMENTS:")
-            for agent_id, response in state["agent_responses"].items():
-                if agent_id != "architect":
-                    rating = response.get('rating', 'N/A')
-                    reasoning = response.get('reasoning', '')[:200]
-                    parts.append(f"\n{agent_id.upper()}: {rating}")
-                    parts.append(f"  {reasoning}...")
-        
-        parts.append("""
-
-INSTRUCTIONS:
-Analyze this proposal from a technical architecture perspective. Consider:
-1. System design patterns and their appropriateness
-2. Scalability and performance implications
-3. Single points of failure and resilience
-4. Integration complexity and dependencies
-5. Observability and debugging capability
-
-Provide your assessment using the specified format.""")
-        
-        return "\n".join(parts)
-    
-    def _parse_response(self, response_text: str) -> Dict[str, Any]:
-        """Parse Architect response."""
-        rating = "WARN"
-        for r in ["ENDORSE", "ACCEPT", "WARN", "BLOCK"]:
-            if r in response_text.upper():
-                rating = r
-                break
-        
-        confidence = 75
-        conf_match = re.search(
-            r"CONFIDENCE:\s*(\d+)",
-            response_text,
-            re.IGNORECASE
-        )
-        if conf_match:
-            confidence = min(100, max(0, int(conf_match.group(1))))
-        
-        return {
-            "rating": rating,
-            "confidence": confidence,
-            "reasoning": response_text
-        }
+        # Use base class _invoke_llm which expects state dict
+        response_text = self._invoke_llm(state)
+        # Use base class _parse_response which returns AgentResponse
+        agent_response = super()._parse_response(response_text)
+        # Convert to dict for compatibility with agent_executor
+        return agent_response.to_dict()

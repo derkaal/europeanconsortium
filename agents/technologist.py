@@ -202,7 +202,7 @@ Check for secrets management, encryption, access controls. Consider supply chain
 are critical vulnerabilities or missing foundational controls, rate it BLOCK and provide specific
 remediation. If security is operational and defense-in-depth is present, ACCEPT or ENDORSE.
 
-Remember: Your job is not to say "no"—it's to say "yes, here's how we make it secure.""""
+Remember: Your job is not to say "no"—it's to say "yes, here's how we make it secure."""
 
 
 class TechnologistAgent(Agent):

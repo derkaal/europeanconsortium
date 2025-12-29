@@ -14,6 +14,7 @@ def agent_executor_node(state: Dict[str, Any]) -> Dict[str, Any]:
     
     try:
         from agents.sovereign import SovereignAgent
+        from agents.intelligence_sovereign import IntelligenceSovereignAgent
         from agents.economist import EconomistAgent
         from agents.jurist import JuristAgent
         from agents.architect import ArchitectAgent
@@ -22,7 +23,7 @@ def agent_executor_node(state: Dict[str, Any]) -> Dict[str, Any]:
         from agents.ethnographer import EthnographerAgent
         from agents.technologist import TechnologistAgent
         from agents.consumer_voice import ConsumerVoiceAgent
-        from src.consortium.config import ConfigManager
+        from src.consortium.config import ConfigLoader
     except ImportError as e:
         logger.error(f"Import failed: {e}")
         return {
@@ -36,12 +37,13 @@ def agent_executor_node(state: Dict[str, Any]) -> Dict[str, Any]:
             }
         }
     
-    config_manager = ConfigManager()
+    config_manager = ConfigLoader()
 
-    # Registry of all available agents (9 total across all tiers)
+    # Registry of all available agents (10 total across all tiers)
     available_agents = {
         # Big Three
         "sovereign": SovereignAgent,
+        "intelligence_sovereign": IntelligenceSovereignAgent,
         "economist": EconomistAgent,
         "jurist": JuristAgent,
         # Tier 1
@@ -84,12 +86,18 @@ def agent_executor_node(state: Dict[str, Any]) -> Dict[str, Any]:
             logger.info(f"Invoking {agent_id}...")
             response = agent.invoke(state)
             
+            # Handle both AgentResponse objects and dict responses
             if not isinstance(response, dict):
-                response = {
-                    "rating": "WARN",
-                    "confidence": 50,
-                    "reasoning": str(response)
-                }
+                # Check if it's an AgentResponse object
+                if hasattr(response, 'to_dict'):
+                    response = response.to_dict()
+                else:
+                    # Fallback for unknown types
+                    response = {
+                        "rating": "WARN",
+                        "confidence": 50,
+                        "reasoning": str(response)
+                    }
             
             if "rating" not in response:
                 response["rating"] = "WARN"

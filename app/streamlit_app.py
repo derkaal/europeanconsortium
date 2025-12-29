@@ -8,10 +8,18 @@ real-time deliberation results.
 import streamlit as st
 import sys
 import os
-from typing import Dict, Any, List
 
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+# Import consortium components
+from src.consortium import create_consortium_graph, create_initial_state
+
+# PDF generation
+try:
+    from app.pdf_export import generate_consortium_pdf, PDF_AVAILABLE
+except ImportError:
+    PDF_AVAILABLE = False
 
 # Page configuration
 st.set_page_config(
@@ -27,6 +35,15 @@ st.markdown("""
     .agent-card {
         padding: 1rem;
         border-radius: 0.5rem;
+        margin: 0.5rem 0;
+        color: #1e1e1e;
+    }
+    .agent-card h4 {
+        color: #1e1e1e;
+        margin-top: 0;
+    }
+    .agent-card p {
+        color: #1e1e1e;
         margin: 0.5rem 0;
     }
     .block-card {
@@ -51,6 +68,15 @@ st.markdown("""
         border-radius: 0.5rem;
         border-left: 4px solid #9c27b0;
         margin: 1rem 0;
+        color: #1e1e1e;
+    }
+    .tension-box h4 {
+        color: #1e1e1e;
+        margin-top: 0;
+    }
+    .tension-box p {
+        color: #1e1e1e;
+        margin: 0.5rem 0;
     }
     .alchemist-box {
         background-color: #fce4ec;
@@ -58,6 +84,15 @@ st.markdown("""
         border-radius: 0.5rem;
         border-left: 4px solid #e91e63;
         margin: 1rem 0;
+        color: #1e1e1e;
+    }
+    .alchemist-box h4 {
+        color: #1e1e1e;
+        margin-top: 0;
+    }
+    .alchemist-box p {
+        color: #1e1e1e;
+        margin: 0.5rem 0;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -66,7 +101,8 @@ st.markdown("""
 st.title("🇪🇺 European Strategy Consortium")
 st.markdown("""
 Multi-agent deliberation system for European business strategy.
-9 specialized agents evaluate proposals through adversarial collaboration, converging on **"Yes, If"** recommendations.
+10 specialized agents evaluate proposals through adversarial collaboration,
+converging on **"Yes, If"** recommendations.
 """)
 
 # Sidebar: Agent selection and settings
@@ -77,33 +113,92 @@ with st.sidebar:
 
     # Big Three
     st.markdown("**Big Three (Foundational)**")
-    sovereign_enabled = st.checkbox("🛡️ Sovereign (Data Sovereignty)", value=True)
-    economist_enabled = st.checkbox("💰 Economist (Financial Viability)", value=True)
-    jurist_enabled = st.checkbox("⚖️ Jurist (Legal Compliance)", value=True)
+    sovereign_enabled = st.checkbox(
+        "🛡️ Sovereign (Data Sovereignty)", value=True
+    )
+    intelligence_sovereign_enabled = st.checkbox(
+        "🤖 Intelligence Sovereign (AI Sovereignty)", value=True
+    )
+    economist_enabled = st.checkbox(
+        "💰 Economist (Financial Viability)", value=True
+    )
+    jurist_enabled = st.checkbox(
+        "⚖️ Jurist (Legal Compliance)", value=True
+    )
 
     # Tier 1
     st.markdown("**Tier 1 (Technical & Values)**")
-    architect_enabled = st.checkbox("🏗️ Architect (Systems Design)", value=True)
-    ecosystem_enabled = st.checkbox("🌱 Eco-System (Sustainability)", value=True)
-    philosopher_enabled = st.checkbox("🧠 Philosopher (Ethics)", value=True)
+    architect_enabled = st.checkbox(
+        "🏗️ Architect (Systems Design)", value=True
+    )
+    ecosystem_enabled = st.checkbox(
+        "🌱 Eco-System (Sustainability)", value=True
+    )
+    philosopher_enabled = st.checkbox(
+        "🧠 Philosopher (Ethics)", value=True
+    )
 
     # Tier 4
     st.markdown("**Tier 4 (Specialized)**")
-    ethnographer_enabled = st.checkbox("🌍 Ethnographer (Cultural Fit)", value=True)
-    technologist_enabled = st.checkbox("🔒 Technologist (Security)", value=True)
-    consumer_voice_enabled = st.checkbox("👥 Consumer Voice (User Protection)", value=True)
+    ethnographer_enabled = st.checkbox(
+        "🌍 Ethnographer (Cultural Fit)", value=True
+    )
+    technologist_enabled = st.checkbox(
+        "🔒 Technologist (Security)", value=True
+    )
+    consumer_voice_enabled = st.checkbox(
+        "👥 Consumer Voice (User Protection)", value=True
+    )
 
     # Meta
     st.markdown("**Meta-Agent**")
-    cla_enabled = st.checkbox("🧟 CLA (Zombie Detection)", value=False, help="Only for proposals creating permanent programs/regulations")
+    cla_enabled = st.checkbox(
+        "🧟 CLA (Zombie Detection)",
+        value=False,
+        help="Only for proposals creating permanent programs/regulations"
+    )
 
     st.divider()
 
     # Advanced settings
     with st.expander("Advanced Settings"):
+        st.subheader("LLM Provider")
+        provider_choice = st.selectbox(
+            "Primary LLM Provider",
+            [
+                "Anthropic (Claude)",
+                "OpenAI (GPT-4)",
+                "Mistral",
+                "Google (Gemini)"
+            ],
+            index=0,
+            help="Select which LLM provider to use. "
+                 "System will failover to others if primary fails."
+        )
+        
+        # Map display names to provider names
+        provider_map = {
+            "Anthropic (Claude)": "anthropic",
+            "OpenAI (GPT-4)": "openai",
+            "Mistral": "mistral",
+            "Google (Gemini)": "gemini"
+        }
+        selected_provider = provider_map[provider_choice]
+        
+        st.divider()
+        st.subheader("Consensus Settings")
         max_iterations = st.slider("Max Consensus Iterations", 1, 10, 5)
-        convergence_threshold = st.slider("Convergence Threshold", 0.5, 1.0, 0.7, 0.05)
-        demo_mode = st.checkbox("Demo Mode (Mock Responses)", value=True, help="Use mock LLM responses to avoid API costs")
+        convergence_threshold = st.slider(
+            "Convergence Threshold", 0.5, 1.0, 0.7, 0.05
+        )
+        
+        st.divider()
+        st.subheader("Demo Mode")
+        demo_mode = st.checkbox(
+            "Demo Mode (Mock Responses)",
+            value=True,
+            help="Use mock LLM responses to avoid API costs"
+        )
 
 # Main query input
 st.header("📝 Strategic Query")
@@ -115,34 +210,53 @@ with col1:
     query = st.text_area(
         "Enter your strategic question:",
         height=100,
-        placeholder="Example: Should we move our automotive R&D data to a US cloud provider?",
+        placeholder="Example: Should we move our automotive R&D data "
+                    "to a US cloud provider?",
         max_chars=2000
     )
 
     industry = st.selectbox(
         "Industry",
-        ["", "Automotive", "Finance", "Healthcare", "Technology", "Retail", "Manufacturing", "Public Sector", "Other"]
+        [
+            "", "Automotive", "Finance", "Healthcare", "Technology",
+            "Retail", "Manufacturing", "Public Sector", "Other"
+        ]
     )
 
     company_size = st.selectbox(
         "Company Size",
-        ["", "Startup (<50)", "Small (50-250)", "Medium (250-1000)", "Large (1000-5000)", "Enterprise (>5000)"]
+        [
+            "", "Startup (<50)", "Small (50-250)", "Medium (250-1000)",
+            "Large (1000-5000)", "Enterprise (>5000)"
+        ]
     )
 
 with col2:
     markets = st.multiselect(
         "Target Markets",
-        ["Germany", "France", "Italy", "Spain", "Netherlands", "Belgium", "Poland", "Sweden", "Denmark", "Ireland", "Other EU"]
+        [
+            "Germany", "France", "Italy", "Spain", "Netherlands",
+            "Belgium", "Poland", "Sweden", "Denmark", "Ireland", "Other EU"
+        ]
     )
 
     constraints = st.text_area(
         "Key Constraints (optional)",
         height=100,
-        placeholder="e.g., 'Works council must approve', 'Limited budget: €500K', 'Must launch in 3 months'"
+        placeholder="e.g., 'Works council must approve', "
+                    "'Limited budget: €500K', 'Must launch in 3 months'"
     )
 
 # Analyze button
-analyze_button = st.button("🔍 Analyze with Consortium", type="primary", use_container_width=True)
+analyze_button = st.button(
+    "🔍 Analyze with Consortium",
+    type="primary",
+    use_container_width=True
+)
+
+# Store results in session state for PDF export
+if 'analysis_results' not in st.session_state:
+    st.session_state.analysis_results = None
 
 # Analysis results
 if analyze_button:
@@ -153,6 +267,8 @@ if analyze_button:
         enabled_agents = []
         if sovereign_enabled:
             enabled_agents.append("sovereign")
+        if intelligence_sovereign_enabled:
+            enabled_agents.append("intelligence_sovereign")
         if economist_enabled:
             enabled_agents.append("economist")
         if jurist_enabled:
@@ -174,29 +290,265 @@ if analyze_button:
             st.error("Please enable at least one agent.")
         else:
             with st.spinner(f"Consulting {len(enabled_agents)} agents..."):
-                # Mock implementation for demo
+                # Real or mock implementation
                 if demo_mode:
-                    # Display mock results
-                    st.success(f"Analysis complete! {len(enabled_agents)} agents consulted.")
-
-                    # Agent responses section
-                    st.header("🎭 Agent Deliberation")
-
+                    # Build context
+                    context = {}
+                    if industry:
+                        context["industry"] = industry
+                    if company_size:
+                        context["company_size"] = company_size
+                    if markets:
+                        context["markets"] = markets
+                    if constraints:
+                        context["constraints"] = constraints
+                    
                     # Create mock responses based on query
                     agent_data = {
-                        "sovereign": {"rating": "WARN", "confidence": 0.75, "reasoning": "Data sovereignty concerns: US Cloud Act exposure for EU data. Recommend: EU cloud provider (OVHcloud, Scaleway) OR AWS EU with encryption + customer-managed keys.", "color": "warn"},
-                        "economist": {"rating": "ACCEPT", "confidence": 0.82, "reasoning": "Cloud TCO favorable: On-prem €10M/year vs Cloud €6-8M/year. ROI within 18 months. Trust Premium positioning can justify any sovereignty premium.", "color": "accept"},
-                        "jurist": {"rating": "WARN", "confidence": 0.88, "reasoning": "GDPR Article 46: Standard Contractual Clauses (SCCs) required for US provider. Recommend: Data Processing Agreement + SCCs + encryption. Works council approval needed (Germany).", "color": "warn"},
-                        "architect": {"rating": "ACCEPT", "confidence": 0.70, "reasoning": "Cloud architecture sound for R&D workloads. Recommend: Multi-region deployment, backup strategy, disaster recovery plan. Technical debt: low.", "color": "accept"},
-                        "ecosystem": {"rating": "WARN", "confidence": 0.65, "reasoning": "High compute workloads = high carbon footprint. Require: Renewable energy commitment from cloud provider. Target: <0.1 kg CO₂/kWh (vs current data center: 0.5 kg CO₂/kWh).", "color": "warn"},
-                        "philosopher": {"rating": "ACCEPT", "confidence": 0.73, "reasoning": "R&D data not directly user-facing, lower ethical concerns. Ensure: Employee privacy protected, no surveillance of internal communications. Autonomy: reasonable.", "color": "accept"},
-                        "ethnographer": {"rating": "WARN", "confidence": 0.80, "reasoning": "German engineering culture values control and precision. Works council (Betriebsrat) requires 6-month consultation for IT changes. Recommend: Phased migration, cultural change management, emphasize quality not just cost.", "color": "warn"},
-                        "technologist": {"rating": "WARN", "confidence": 0.85, "reasoning": "Trade secret protection critical for automotive R&D. BLOCK: Unencrypted data in cloud. REQUIRE: Encryption in use (confidential computing), HSM for key management, SIEM for threat detection.", "color": "warn"},
-                        "consumer_voice": {"rating": "ACCEPT", "confidence": 0.60, "reasoning": "B2B scenario, not direct consumer impact. Ensure: Customer data (if any) remains protected. Transparency: inform customers if their data affected by cloud migration.", "color": "accept"},
+                        "sovereign": {
+                            "rating": "WARN",
+                            "confidence": 0.75,
+                            "reasoning": "Data sovereignty concerns: US Cloud "
+                                       "Act exposure for EU data. Recommend: "
+                                       "EU cloud provider (OVHcloud, Scaleway) "
+                                       "OR AWS EU with encryption + "
+                                       "customer-managed keys.",
+                            "color": "warn"
+                        },
+                        "intelligence_sovereign": {
+                            "rating": "WARN",
+                            "confidence": 0.82,
+                            "reasoning": "AI sovereignty concerns: If using AI "
+                                       "for R&D analysis, avoid sending "
+                                       "strategic intelligence to foreign AI "
+                                       "providers (GPT-4, Claude). Recommend: "
+                                       "Mistral AI or self-hosted Llama 3 for "
+                                       "sensitive AI workloads.",
+                            "color": "warn"
+                        },
+                        "economist": {
+                            "rating": "ACCEPT",
+                            "confidence": 0.82,
+                            "reasoning": "Cloud TCO favorable: On-prem "
+                                       "€10M/year vs Cloud €6-8M/year. ROI "
+                                       "within 18 months. Trust Premium "
+                                       "positioning can justify any sovereignty "
+                                       "premium.",
+                            "color": "accept"
+                        },
+                        "jurist": {
+                            "rating": "WARN",
+                            "confidence": 0.88,
+                            "reasoning": "GDPR Article 46: Standard Contractual "
+                                       "Clauses (SCCs) required for US provider. "
+                                       "Recommend: Data Processing Agreement + "
+                                       "SCCs + encryption. Works council "
+                                       "approval needed (Germany).",
+                            "color": "warn"
+                        },
+                        "architect": {
+                            "rating": "ACCEPT",
+                            "confidence": 0.70,
+                            "reasoning": "Cloud architecture sound for R&D "
+                                       "workloads. Recommend: Multi-region "
+                                       "deployment, backup strategy, disaster "
+                                       "recovery plan. Technical debt: low.",
+                            "color": "accept"
+                        },
+                        "ecosystem": {
+                            "rating": "WARN",
+                            "confidence": 0.65,
+                            "reasoning": "High compute workloads = high carbon "
+                                       "footprint. Require: Renewable energy "
+                                       "commitment from cloud provider. Target: "
+                                       "<0.1 kg CO₂/kWh (vs current data "
+                                       "center: 0.5 kg CO₂/kWh).",
+                            "color": "warn"
+                        },
+                        "philosopher": {
+                            "rating": "ACCEPT",
+                            "confidence": 0.73,
+                            "reasoning": "R&D data not directly user-facing, "
+                                       "lower ethical concerns. Ensure: "
+                                       "Employee privacy protected, no "
+                                       "surveillance of internal communications. "
+                                       "Autonomy: reasonable.",
+                            "color": "accept"
+                        },
+                        "ethnographer": {
+                            "rating": "WARN",
+                            "confidence": 0.80,
+                            "reasoning": "German engineering culture values "
+                                       "control and precision. Works council "
+                                       "(Betriebsrat) requires 6-month "
+                                       "consultation for IT changes. Recommend: "
+                                       "Phased migration, cultural change "
+                                       "management, emphasize quality not just "
+                                       "cost.",
+                            "color": "warn"
+                        },
+                        "technologist": {
+                            "rating": "WARN",
+                            "confidence": 0.85,
+                            "reasoning": "Trade secret protection critical for "
+                                       "automotive R&D. BLOCK: Unencrypted data "
+                                       "in cloud. REQUIRE: Encryption in use "
+                                       "(confidential computing), HSM for key "
+                                       "management, SIEM for threat detection.",
+                            "color": "warn"
+                        },
+                        "consumer_voice": {
+                            "rating": "ACCEPT",
+                            "confidence": 0.60,
+                            "reasoning": "B2B scenario, not direct consumer "
+                                       "impact. Ensure: Customer data (if any) "
+                                       "remains protected. Transparency: inform "
+                                       "customers if their data affected by "
+                                       "cloud migration.",
+                            "color": "accept"
+                        },
                     }
 
                     # Filter to enabled agents
-                    filtered_agents = {k: v for k, v in agent_data.items() if k in enabled_agents}
+                    filtered_agents = {
+                        k: v for k, v in agent_data.items()
+                        if k in enabled_agents
+                    }
+                    
+                    # Mock tensions
+                    tensions = [
+                        {
+                            "agents": "Sovereign ↔ Economist",
+                            "description": "Data sovereignty requirements "
+                                         "(EU cloud) vs cost optimization "
+                                         "(AWS cheaper)",
+                            "resolution": "AWS EU regions + encryption + "
+                                        "customer-managed keys. Position as "
+                                        "'Trust Premium' to justify cost."
+                        },
+                        {
+                            "agents": "Ethnographer ↔ Architect",
+                            "description": "Cultural change management "
+                                         "(6-month works council process) vs "
+                                         "technical speed (3-month migration)",
+                            "resolution": "Phased migration: Start with "
+                                        "non-critical workloads (3 months), "
+                                        "expand after works council approval "
+                                        "(6-9 months total)"
+                        }
+                    ]
+                    
+                    # Mock final recommendation
+                    final_rec = {
+                        "recommendation": "RECOMMENDED WITH CONDITIONS "
+                                        "(Confidence: 78%)\n\nBased on "
+                                        "analysis by 10 expert agents, the "
+                                        "consortium's assessment is: Mixed "
+                                        "assessment with conditions noted.",
+                        "action_items": [
+                            {
+                                "action": "Use AWS EU regions (Frankfurt, "
+                                        "Ireland) exclusively",
+                                "owner": "Infrastructure Team",
+                                "priority": "HIGH",
+                                "details": "Ensure all data remains within EU "
+                                         "jurisdiction"
+                            },
+                            {
+                                "action": "Implement encryption at rest, in "
+                                        "transit, and in use (confidential "
+                                        "computing)",
+                                "owner": "Security Team",
+                                "priority": "HIGH",
+                                "details": "Use AWS confidential computing "
+                                         "features"
+                            },
+                            {
+                                "action": "Customer-managed encryption keys "
+                                        "(AWS KMS with CMK)",
+                                "owner": "Security Team",
+                                "priority": "HIGH",
+                                "details": "Maintain control over encryption "
+                                         "keys"
+                            },
+                            {
+                                "action": "Sign Standard Contractual Clauses "
+                                        "(SCCs) with AWS",
+                                "owner": "Legal Team",
+                                "priority": "HIGH",
+                                "details": "GDPR compliance requirement"
+                            },
+                            {
+                                "action": "Engage German works council: "
+                                        "6-month consultation process",
+                                "owner": "HR & Management",
+                                "priority": "HIGH",
+                                "details": "Required by German labor law for "
+                                         "IT changes"
+                            },
+                            {
+                                "action": "Phased migration: Non-critical "
+                                        "workloads first (3 months), critical "
+                                        "after approval (6-9 months)",
+                                "owner": "Project Management",
+                                "priority": "MEDIUM",
+                                "details": "Reduces risk and allows for "
+                                         "cultural adaptation"
+                            },
+                            {
+                                "action": "Deploy SIEM for security monitoring "
+                                        "(AWS Security Hub + GuardDuty)",
+                                "owner": "Security Team",
+                                "priority": "HIGH",
+                                "details": "Continuous threat detection and "
+                                         "monitoring"
+                            },
+                            {
+                                "action": "Choose renewable energy regions "
+                                        "(AWS EU-Frankfurt: 95% renewable)",
+                                "owner": "Sustainability Team",
+                                "priority": "MEDIUM",
+                                "details": "Align with environmental goals"
+                            },
+                            {
+                                "action": "Implement disaster recovery plan "
+                                        "with 99.9% uptime SLA",
+                                "owner": "Infrastructure Team",
+                                "priority": "HIGH",
+                                "details": "Business continuity requirement"
+                            },
+                            {
+                                "action": "Budget: €200K for security controls "
+                                        "(HSM, SIEM) + €500K migration costs",
+                                "owner": "Finance Team",
+                                "priority": "HIGH",
+                                "details": "Total investment: €700K with 18-month "
+                                         "ROI"
+                            }
+                        ]
+                    }
+                    
+                    # Store in session state for PDF export
+                    st.session_state.analysis_results = {
+                        "query": query,
+                        "context": context,
+                        "agent_responses": filtered_agents,
+                        "tensions": tensions,
+                        "final_recommendation": final_rec,
+                        "convergence_status": {
+                            "converged": True,
+                            "positive_percentage": 78
+                        }
+                    }
+                    
+                    # Display results
+                    st.success(
+                        f"Analysis complete! {len(enabled_agents)} agents "
+                        "consulted."
+                    )
+
+                    # Agent responses section
+                    st.header("🎭 Agent Deliberation")
 
                     # Display agent cards
                     cols = st.columns(3)
@@ -205,6 +557,8 @@ if analyze_button:
                             # Map agent_id to display name
                             agent_names = {
                                 "sovereign": "🛡️ Sovereign",
+                                "intelligence_sovereign": "🤖 Intelligence "
+                                                         "Sovereign",
                                 "economist": "💰 Economist",
                                 "jurist": "⚖️ Jurist",
                                 "architect": "🏗️ Architect",
@@ -219,33 +573,28 @@ if analyze_button:
                             <div class="agent-card {data['color']}-card">
                                 <h4>{agent_names.get(agent_id, agent_id)}</h4>
                                 <p><strong>Rating:</strong> {data['rating']}</p>
-                                <p><strong>Confidence:</strong> {data['confidence']:.0%}</p>
+                                <p><strong>Confidence:</strong> 
+                                   {data['confidence']:.0%}</p>
                             </div>
                             """, unsafe_allow_html=True)
 
-                            with st.expander(f"📋 Full Reasoning"):
+                            with st.expander("📋 Full Reasoning"):
                                 st.write(data['reasoning'])
 
                     # Tensions detected
                     st.header("⚡ Tensions Detected")
 
-                    st.markdown("""
-                    <div class="tension-box">
-                        <h4>Sovereign ↔ Economist</h4>
-                        <p><strong>Conflict:</strong> Data sovereignty requirements (EU cloud) vs cost optimization (AWS cheaper)</p>
-                        <p><strong>Resolution:</strong> AWS EU regions + encryption + customer-managed keys. Position as "Trust Premium" to justify cost.</p>
-                        <p><strong>Status:</strong> ✅ Resolved</p>
-                    </div>
-                    """, unsafe_allow_html=True)
-
-                    st.markdown("""
-                    <div class="tension-box">
-                        <h4>Ethnographer ↔ Architect</h4>
-                        <p><strong>Conflict:</strong> Cultural change management (6-month works council process) vs technical speed (3-month migration)</p>
-                        <p><strong>Resolution:</strong> Phased migration: Start with non-critical workloads (3 months), expand after works council approval (6-9 months total)</p>
-                        <p><strong>Status:</strong> ✅ Resolved</p>
-                    </div>
-                    """, unsafe_allow_html=True)
+                    for tension in tensions:
+                        st.markdown(f"""
+                        <div class="tension-box">
+                            <h4>{tension['agents']}</h4>
+                            <p><strong>Conflict:</strong> 
+                               {tension['description']}</p>
+                            <p><strong>Resolution:</strong> 
+                               {tension['resolution']}</p>
+                            <p><strong>Status:</strong> ✅ Resolved</p>
+                        </div>
+                        """, unsafe_allow_html=True)
 
                     # Final recommendation
                     st.header("📊 Final Recommendation")
@@ -257,55 +606,281 @@ if analyze_button:
                     st.subheader("Pyramid Principle Summary")
 
                     st.markdown("""
-                    **Main Recommendation:** Proceed with cloud migration using **AWS EU regions** with data sovereignty controls.
+                    **Main Recommendation:** Proceed with cloud migration using 
+                    **AWS EU regions** with data sovereignty controls.
 
                     **Supporting Arguments:**
-                    1. **Financial**: €4M annual savings (€10M on-prem → €6M cloud), 18-month ROI
-                    2. **Legal**: GDPR-compliant via SCCs + encryption + customer-managed keys
-                    3. **Technical**: Sound architecture with multi-region deployment + DR plan
-                    4. **Cultural**: Phased rollout accommodates German works council (6-month consultation)
-                    5. **Security**: Encryption in use + HSM key management + SIEM monitoring
-                    6. **Environmental**: Choose AWS renewable energy regions (95% renewable in EU-Frankfurt)
+                    1. **Financial**: €4M annual savings (€10M on-prem → 
+                       €6M cloud), 18-month ROI
+                    2. **Legal**: GDPR-compliant via SCCs + encryption + 
+                       customer-managed keys
+                    3. **Technical**: Sound architecture with multi-region 
+                       deployment + DR plan
+                    4. **Cultural**: Phased rollout accommodates German works 
+                       council (6-month consultation)
+                    5. **Security**: Encryption in use + HSM key management + 
+                       SIEM monitoring
+                    6. **Environmental**: Choose AWS renewable energy regions 
+                       (95% renewable in EU-Frankfurt)
                     """)
 
                     st.subheader("\"Yes, If\" Conditions")
-
-                    conditions = [
-                        "✅ Use AWS EU regions (Frankfurt, Ireland) exclusively",
-                        "✅ Implement encryption at rest, in transit, and in use (confidential computing)",
-                        "✅ Customer-managed encryption keys (AWS KMS with CMK)",
-                        "✅ Sign Standard Contractual Clauses (SCCs) with AWS",
-                        "✅ Engage German works council: 6-month consultation process",
-                        "✅ Phased migration: Non-critical workloads first (3 months), critical after approval (6-9 months)",
-                        "✅ Deploy SIEM for security monitoring (AWS Security Hub + GuardDuty)",
-                        "✅ Choose renewable energy regions (AWS EU-Frankfurt: 95% renewable)",
-                        "✅ Implement disaster recovery plan with 99.9% uptime SLA",
-                        "✅ Budget: €200K for security controls (HSM, SIEM) + €500K migration costs"
-                    ]
-
-                    for condition in conditions:
-                        st.markdown(condition)
+                    
+                    # Display conditions with full text (no truncation)
+                    for item in final_rec['action_items']:
+                        priority_emoji = {
+                            "HIGH": "🔴",
+                            "MEDIUM": "🟡",
+                            "LOW": "🟢"
+                        }.get(item['priority'], "⚪")
+                        
+                        with st.expander(
+                            f"{priority_emoji} {item['action']} "
+                            f"({item['owner']})",
+                            expanded=False
+                        ):
+                            st.markdown(f"**Priority:** {item['priority']}")
+                            st.markdown(f"**Owner:** {item['owner']}")
+                            if item.get('details'):
+                                st.markdown(f"**Details:** {item['details']}")
 
                     # Alchemist reframe (premium positioning)
                     st.markdown("""
                     <div class="alchemist-box">
                         <h4>💎 Premium Positioning Opportunity</h4>
-                        <p><strong>Alchemist Reframe:</strong> Market this as <em>"German Engineering on Secure European Cloud Infrastructure"</em></p>
-                        <p><strong>Trust Premium:</strong> Position data sovereignty and security as competitive advantages, not costs.</p>
-                        <p><strong>Revenue Opportunity:</strong> 15% price premium for "EU-secure" R&D services → €3.2M additional revenue/year</p>
-                        <p><strong>Net Benefit:</strong> €4M cost savings + €3.2M revenue uplift = <strong>€7.2M total value</strong></p>
+                        <p><strong>Alchemist Reframe:</strong> Market this as 
+                           <em>"German Engineering on Secure European Cloud 
+                           Infrastructure"</em></p>
+                        <p><strong>Trust Premium:</strong> Position data 
+                           sovereignty and security as competitive advantages, 
+                           not costs.</p>
+                        <p><strong>Revenue Opportunity:</strong> 15% price 
+                           premium for "EU-secure" R&D services → €3.2M 
+                           additional revenue/year</p>
+                        <p><strong>Net Benefit:</strong> €4M cost savings + 
+                           €3.2M revenue uplift = <strong>€7.2M total 
+                           value</strong></p>
                     </div>
                     """, unsafe_allow_html=True)
 
                 else:
-                    # Real implementation would go here
-                    st.info("Real LLM integration not yet implemented. Enable 'Demo Mode' in sidebar for mock results.")
+                    # Real LLM implementation
+                    try:
+                        # Build context from form inputs
+                        context = {}
+                        if industry:
+                            context["industry"] = industry
+                        if company_size:
+                            context["company_size"] = company_size
+                        if markets:
+                            context["markets"] = markets
+                        if constraints:
+                            context["constraints"] = constraints
+                        
+                        # Add provider preference to context
+                        context["preferred_provider"] = selected_provider
+                        
+                        # Display provider info
+                        st.info(
+                            f"🤖 Using {provider_choice} as primary LLM "
+                            "provider (with automatic failover)"
+                        )
+                        
+                        # Create the graph
+                        graph = create_consortium_graph()
+                        
+                        # Create initial state
+                        initial_state = create_initial_state(
+                            query=query,
+                            context=context
+                        )
+                        
+                        # Run the graph
+                        result = graph.invoke(initial_state)
+                        
+                        # Store in session state for PDF export
+                        st.session_state.analysis_results = {
+                            "query": query,
+                            "context": context,
+                            "agent_responses": result.get("agent_responses", {}),
+                            "tensions": result.get("resolved_tensions", []),
+                            "final_recommendation": result.get(
+                                "final_recommendation", {}
+                            ),
+                            "convergence_status": result.get(
+                                "convergence_status", {}
+                            )
+                        }
+                        
+                        # Display success
+                        st.success(
+                            f"Analysis complete! "
+                            f"{len(result['triggered_agents'])} agents "
+                            "consulted."
+                        )
+                        
+                        # Agent responses section
+                        st.header("🎭 Agent Deliberation")
+                        
+                        # Map rating to color
+                        rating_colors = {
+                            "BLOCK": "block",
+                            "WARN": "warn",
+                            "ACCEPT": "accept",
+                            "ENDORSE": "endorse"
+                        }
+                        
+                        # Display agent cards
+                        agent_names = {
+                            "sovereign": "🛡️ Sovereign",
+                            "intelligence_sovereign": "🤖 Intelligence Sovereign",
+                            "economist": "💰 Economist",
+                            "jurist": "⚖️ Jurist",
+                            "architect": "🏗️ Architect",
+                            "ecosystem": "🌱 Eco-System",
+                            "philosopher": "🧠 Philosopher",
+                            "ethnographer": "🌍 Ethnographer",
+                            "technologist": "🔒 Technologist",
+                            "consumer_voice": "👥 Consumer Voice"
+                        }
+                        
+                        cols = st.columns(3)
+                        for i, (agent_id, response) in enumerate(
+                            result["agent_responses"].items()
+                        ):
+                            with cols[i % 3]:
+                                color = rating_colors.get(
+                                    response['rating'], 'accept'
+                                )
+                                
+                                st.markdown(f"""
+                                <div class="agent-card {color}-card">
+                                    <h4>{agent_names.get(agent_id, agent_id)}</h4>
+                                    <p><strong>Rating:</strong> 
+                                       {response['rating']}</p>
+                                    <p><strong>Confidence:</strong> 
+                                       {response['confidence']:.0%}</p>
+                                </div>
+                                """, unsafe_allow_html=True)
+                                
+                                with st.expander("📋 Full Reasoning"):
+                                    st.write(response['reasoning'])
+                                    if response.get('mitigation_plan'):
+                                        st.write("**Mitigation:**")
+                                        st.write(response['mitigation_plan'])
+                        
+                        # Tensions detected
+                        if result.get('resolved_tensions'):
+                            st.header("⚡ Tensions Detected & Resolved")
+                            for tension in result['resolved_tensions']:
+                                st.markdown(f"""
+                                <div class="tension-box">
+                                    <h4>{tension.get('agents', 'Unknown')} 
+                                        Tension</h4>
+                                    <p><strong>Conflict:</strong> 
+                                       {tension.get('description', 'N/A')}</p>
+                                    <p><strong>Resolution:</strong> 
+                                       {tension.get('resolution', 'N/A')}</p>
+                                    <p><strong>Status:</strong> ✅ Resolved</p>
+                                </div>
+                                """, unsafe_allow_html=True)
+                        
+                        # Final recommendation
+                        st.header("📊 Final Recommendation")
+                        
+                        conv = result['convergence_status']
+                        if conv['converged']:
+                            st.success("**Rating: CONVERGED**")
+                        else:
+                            st.warning("**Rating: ESCALATED TO HUMAN**")
+                        
+                        if 'positive_percentage' in conv:
+                            st.metric(
+                                "Consensus",
+                                f"{conv['positive_percentage']:.0f}%"
+                            )
+                        st.metric("Iterations", result.get('iteration_count', 1))
+                        
+                        st.subheader("Pyramid Principle Summary")
+                        
+                        rec = result['final_recommendation']
+                        st.markdown(rec['recommendation'])
+                        
+                        if rec.get('action_items'):
+                            st.subheader('"Yes, If" Conditions')
+                            # Display with expandable sections for full text
+                            for item in rec['action_items']:
+                                priority_emoji = {
+                                    "HIGH": "🔴",
+                                    "MEDIUM": "🟡",
+                                    "LOW": "🟢",
+                                    "Critical": "🔴"
+                                }.get(item['priority'], "⚪")
+                                
+                                with st.expander(
+                                    f"{priority_emoji} {item['action']} "
+                                    f"({item['owner']})",
+                                    expanded=False
+                                ):
+                                    st.markdown(
+                                        f"**Priority:** {item['priority']}"
+                                    )
+                                    st.markdown(f"**Owner:** {item['owner']}")
+                                    if item.get('details'):
+                                        st.markdown(
+                                            f"**Details:** {item['details']}"
+                                        )
+                        
+                    except Exception as e:
+                        st.error(f"Error running consortium: {str(e)}")
+                        st.exception(e)
+
+# PDF Export Button
+if st.session_state.analysis_results and PDF_AVAILABLE:
+    st.divider()
+    st.subheader("📄 Export Results")
+    
+    if st.button("📥 Download PDF Report", use_container_width=True):
+        try:
+            results = st.session_state.analysis_results
+            pdf_buffer = generate_consortium_pdf(
+                query=results['query'],
+                context=results['context'],
+                agent_responses=results['agent_responses'],
+                tensions=results['tensions'],
+                final_recommendation=results['final_recommendation'],
+                convergence_status=results['convergence_status']
+            )
+            
+            st.download_button(
+                label="💾 Save PDF",
+                data=pdf_buffer,
+                file_name=f"consortium_analysis_{results['query'][:30]}.pdf",
+                mime="application/pdf",
+                use_container_width=True
+            )
+            st.success("PDF generated successfully!")
+        except Exception as e:
+            st.error(f"Error generating PDF: {str(e)}")
+            st.info(
+                "Install reportlab to enable PDF export: "
+                "pip install reportlab"
+            )
+elif st.session_state.analysis_results and not PDF_AVAILABLE:
+    st.divider()
+    st.warning(
+        "📄 PDF export unavailable. Install reportlab: "
+        "pip install reportlab"
+    )
 
 # Footer
 st.divider()
 st.markdown("""
 <div style='text-align: center; color: #666; font-size: 0.9em;'>
-    <p>European Strategy Consortium • 9 Agents + CLA Meta-Agent • "Yes, If" Protocol</p>
-    <p>Built with LangGraph • Powered by Claude/GPT-4/Mistral • <a href='https://github.com/yourusername/european-consortium'>View on GitHub</a></p>
+    <p>European Strategy Consortium • 10 Agents + CLA Meta-Agent •
+       "Yes, If" Protocol</p>
+    <p>Built with LangGraph • Powered by Claude/GPT-4/Mistral •
+       <a href='https://github.com/yourusername/european-consortium'>
+       View on GitHub</a></p>
 </div>
 """, unsafe_allow_html=True)

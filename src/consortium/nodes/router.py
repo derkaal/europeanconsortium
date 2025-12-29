@@ -9,8 +9,8 @@ def router_node(state: Dict[str, Any]) -> Dict[str, Any]:
     """
     Route query to appropriate agents.
 
-    Now includes all 9 agents across all tiers:
-    - Big Three: Sovereign, Economist, Jurist
+    Now includes all 10 agents across all tiers:
+    - Big Three: Sovereign, Intelligence Sovereign, Economist, Jurist
     - Tier 1: Architect, Eco-System, Philosopher
     - Tier 4: Ethnographer, Technologist, Consumer Voice
     """
@@ -18,17 +18,18 @@ def router_node(state: Dict[str, Any]) -> Dict[str, Any]:
     # All agents for comprehensive analysis
     triggered_agents = [
         # Big Three (foundational)
-        "sovereign",        # Data sovereignty
-        "economist",        # Financial viability
-        "jurist",           # Legal compliance
+        "sovereign",                # Data sovereignty
+        "intelligence_sovereign",   # AI sovereignty
+        "economist",                # Financial viability
+        "jurist",                   # Legal compliance
         # Tier 1 (technical & values)
-        "architect",        # Technical feasibility
-        "ecosystem",        # Sustainability
-        "philosopher",      # Ethics alignment
+        "architect",                # Technical feasibility
+        "ecosystem",                # Sustainability
+        "philosopher",              # Ethics alignment
         # Tier 4 (specialized)
-        "ethnographer",     # Cultural ergonomics
-        "technologist",     # Operational security (CISO)
-        "consumer_voice",   # Consumer protection & accessibility
+        "ethnographer",             # Cultural ergonomics
+        "technologist",             # Operational security (CISO)
+        "consumer_voice",           # Consumer protection & accessibility
     ]
     
     query = state.get("query", "")

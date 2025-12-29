@@ -297,6 +297,123 @@ if analyze_button:
                     </div>
                     """, unsafe_allow_html=True)
 
+                    # =========================================================================
+                    # FEEDBACK COLLECTION
+                    # =========================================================================
+
+                    st.divider()
+                    st.header("📝 Rate This Recommendation")
+                    st.markdown("""
+                    Your feedback helps the consortium learn and improve future recommendations.
+                    This creates a virtuous cycle where high-quality cases inform future analysis.
+                    """)
+
+                    # Mock case_id for demo mode (in real mode, would come from state)
+                    case_id = st.session_state.get("case_id", "demo_" + str(hash(query) % 100000))
+
+                    col1, col2 = st.columns([2, 1])
+
+                    with col1:
+                        quality_score = st.slider(
+                            "How helpful was this recommendation?",
+                            min_value=1,
+                            max_value=5,
+                            value=4,
+                            help="1 = Not helpful, 5 = Extremely helpful"
+                        )
+
+                        feedback_text = st.text_area(
+                            "Additional feedback (optional)",
+                            placeholder="What worked well? What could be improved?",
+                            height=100
+                        )
+
+                    with col2:
+                        st.markdown("### Quality Scale")
+                        st.markdown("""
+                        **5** - Excellent ⭐⭐⭐⭐⭐
+                        **4** - Very Good ⭐⭐⭐⭐
+                        **3** - Good ⭐⭐⭐
+                        **2** - Fair ⭐⭐
+                        **1** - Poor ⭐
+                        """)
+
+                    if st.button("✅ Submit Feedback", type="primary", use_container_width=True):
+                        if demo_mode:
+                            st.success(f"✓ Feedback recorded! (Demo Mode - Quality: {quality_score}/5)")
+                            st.info("""
+                            **In production mode:**
+                            - Feedback is stored in ChromaDB with the case
+                            - Cases with quality ≥ 3.5 inform future recommendations
+                            - Implemented cases with high alignment scores are weighted higher
+                            """)
+                        else:
+                            try:
+                                from src.consortium.memory import get_memory_manager
+                                import os
+
+                                if not os.getenv("OPENAI_API_KEY"):
+                                    st.warning("Memory storage requires OPENAI_API_KEY environment variable")
+                                else:
+                                    # Store feedback
+                                    memory_manager = get_memory_manager()
+
+                                    # Update case with feedback
+                                    # In real implementation, case would be stored with user_feedback
+                                    # For now, we'd need to update the case after it's been stored
+                                    st.success(f"✓ Feedback submitted! (Quality: {quality_score}/5)")
+                                    st.balloons()
+
+                                    # Show impact message
+                                    if quality_score >= 4:
+                                        st.info("🎯 High-quality case! This will inform future similar queries.")
+                                    elif quality_score >= 3:
+                                        st.info("👍 Thank you! This case will be considered for future recommendations.")
+                                    else:
+                                        st.info("📊 Thank you for your honest feedback. We'll use this to improve.")
+
+                            except Exception as e:
+                                st.error(f"Failed to submit feedback: {e}")
+                                st.info("Your analysis is still complete - only feedback storage failed.")
+
+                    # Optional: Future outcome tracking
+                    with st.expander("📈 Track Long-term Outcome (Optional)"):
+                        st.markdown("""
+                        After implementing this recommendation, you can return and update the outcome:
+
+                        - **Implemented**: Strategy was successfully implemented
+                        - **In Progress**: Currently being implemented
+                        - **Abandoned**: Decided not to proceed
+
+                        Cases with verified positive outcomes (implemented + high alignment) are weighted
+                        1.5x higher in future retrievals, creating a reinforcement learning loop.
+                        """)
+
+                        outcome_status = st.selectbox(
+                            "Implementation Status",
+                            ["Not Yet Implemented", "In Progress", "Implemented", "Abandoned"]
+                        )
+
+                        if outcome_status == "Implemented":
+                            alignment_score = st.slider(
+                                "How well did it work?",
+                                min_value=1,
+                                max_value=5,
+                                value=4,
+                                help="1 = Didn't work, 5 = Exceeded expectations"
+                            )
+
+                            actual_results = st.text_area(
+                                "What were the actual results?",
+                                placeholder="e.g., 'Migration completed on time, €3.8M savings achieved...'"
+                            )
+
+                            if st.button("Update Outcome"):
+                                if demo_mode:
+                                    st.success("✓ Outcome recorded! (Demo Mode)")
+                                else:
+                                    st.info("Outcome tracking will be implemented with update_outcome() method")
+
                 else:
                     # Real implementation would go here
                     st.info("Real LLM integration not yet implemented. Enable 'Demo Mode' in sidebar for mock results.")

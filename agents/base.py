@@ -251,25 +251,60 @@ class Agent(ABC):
             prompt_parts.append(f"- **{rating.upper()}**: {criteria}")
         
         # Historical precedents (if available)
-        if memory_cases:
+        if memory_cases and len(memory_cases) > 0:
             prompt_parts.append("\n## Historical Precedents")
             prompt_parts.append(
-                "Consider these past cases when evaluating the current query. "
-                "Learn from successful approaches and failures:"
+                "The following similar cases from the consortium's memory may inform your analysis. "
+                "Learn from successful approaches and past failures:"
             )
             for i, case in enumerate(memory_cases[:3], 1):
+                case_id = case.get('id', 'unknown')[:12]  # First 12 chars of ID
                 similarity = case.get('similarity_score', 0.0)
-                query_text = case.get('query', 'N/A')
-                outcome = case.get('outcome', {}).get('status', 'unknown')
-                
-                prompt_parts.append(f"\n### Case {i} (Similarity: {similarity:.2f}, Outcome: {outcome})")
-                prompt_parts.append(f"Query: {query_text}")
-                
-                # Include relevant learnings if available
-                if 'final_recommendation' in case:
-                    rec = case['final_recommendation'].get('recommendation', '')
-                    if rec:
-                        prompt_parts.append(f"Approach: {rec[:200]}...")
+                enhanced_score = case.get('enhanced_score', similarity)
+                boost_reason = case.get('boost_reason', 'N/A')
+                metadata = case.get('metadata', {})
+
+                # Extract case details from metadata
+                quality_score = metadata.get('quality_score', 0.0)
+                outcome_status = metadata.get('outcome_status', 'not_implemented')
+                alignment_score = metadata.get('alignment_score', 0.0)
+                agents_engaged = metadata.get('agents_engaged', '[]')
+
+                # Format outcome status
+                outcome_display = {
+                    "implemented": "✅ IMPLEMENTED",
+                    "in_progress": "🔄 IN PROGRESS",
+                    "abandoned": "❌ ABANDONED",
+                    "not_implemented": "⏸️ NOT IMPLEMENTED"
+                }.get(outcome_status, outcome_status.upper())
+
+                prompt_parts.append(f"\n### Case {i}: {case_id}... (Similarity: {similarity:.2f})")
+                prompt_parts.append(f"**Query**: {case.get('query', 'N/A')}")
+                prompt_parts.append(f"**Outcome**: {outcome_display}")
+
+                # Add quality and alignment scores if available
+                if quality_score > 0:
+                    prompt_parts.append(f"**User Rating**: {quality_score:.1f}/5.0")
+
+                if outcome_status == "implemented" and alignment_score > 0:
+                    prompt_parts.append(f"**Alignment Score**: {alignment_score:.1f}/5.0 (how well did it work?)")
+
+                # Note if outcome-based boosting was applied
+                if "verified" in boost_reason:
+                    prompt_parts.append(f"**Note**: {boost_reason.replace('_', ' ').title()} (weighted higher in retrieval)")
+
+                # Extract and display agents from JSON string
+                try:
+                    import json
+                    agents_list = json.loads(agents_engaged) if isinstance(agents_engaged, str) else agents_engaged
+                    if self.agent_id in agents_list:
+                        prompt_parts.append(f"**Your Previous Engagement**: You ({self.name}) participated in this case.")
+                except:
+                    pass
+        else:
+            # Cold-start message
+            prompt_parts.append("\n## Historical Precedents")
+            prompt_parts.append("**No similar historical cases found.** This appears to be a novel query for the consortium.")
         
         # Current query context
         prompt_parts.append("\n## Current Query")

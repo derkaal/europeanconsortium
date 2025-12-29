@@ -5,9 +5,14 @@ Implements Pyramid Principle format:
 - Level 2: Supporting arguments by agent
 - Level 3: Action items
 - Level 4: Decision provenance
+
+Also handles post-convergence storage in memory for future retrieval.
 """
 
 import logging
+import os
+import uuid
+from datetime import datetime
 from typing import Dict, Any, List
 
 from ..state import ConsortiumState
@@ -60,10 +65,58 @@ def synthesizer_node(state: ConsortiumState) -> Dict[str, Any]:
         "action_items": action_items,
         "decision_provenance": provenance
     }
-    
+
     logger.info("✓ Final recommendation synthesized")
-    
-    return {"final_recommendation": report}
+
+    # =========================================================================
+    # POST-STORAGE: Store case in memory for future retrieval
+    # =========================================================================
+
+    case_id = None
+
+    # Only store if OpenAI API key is available (required for embeddings)
+    if os.getenv("OPENAI_API_KEY"):
+        try:
+            from ..memory import get_memory_manager
+
+            # Generate unique case ID
+            case_id = str(uuid.uuid4())
+
+            # Create case dict for storage
+            case = {
+                "id": case_id,
+                "query": state.get("query", ""),
+                "context": state.get("context", {}),
+                "agents_engaged": state.get("triggered_agents", []),
+                "agent_responses": state.get("agent_responses", {}),
+                "tensions": state.get("active_tensions", []),
+                "convergence_status": state.get("convergence_status", {}),
+                "final_recommendation": report,
+                "timestamp": datetime.now(),
+                # user_feedback and outcome are initially None
+                # They will be updated later via update_feedback() and update_outcome()
+                "user_feedback": None,
+                "outcome": None
+            }
+
+            # Store in memory
+            memory_manager = get_memory_manager()
+            stored_id = memory_manager.store_case(case)
+
+            logger.info(f"✓ Case stored in memory: {stored_id[:12]}... (for future retrieval and feedback)")
+
+        except Exception as e:
+            logger.warning(f"Failed to store case in memory (proceeding anyway): {e}")
+            # Graceful degradation: case_id remains None if storage fails
+            case_id = None
+    else:
+        logger.info("Case storage skipped (OPENAI_API_KEY not set for embeddings)")
+
+    # Return final recommendation and case_id (for feedback collection)
+    return {
+        "final_recommendation": report,
+        "case_id": case_id
+    }
 
 
 def _generate_recommendation(state: ConsortiumState) -> str:

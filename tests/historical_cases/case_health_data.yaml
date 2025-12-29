@@ -1,0 +1,63 @@
+query: "Should we build a pan-European health data platform for clinical research collaboration?"
+
+context:
+  industry: "Healthcare / Medical Research"
+  company_size: "Consortium (15 hospitals, 5 research institutions)"
+  market: "Pan-European (Germany, France, Italy, Netherlands, Poland)"
+  current_state: "Fragmented data silos, limited cross-border research"
+  constraints:
+    - "GDPR Article 9: Special category data (health)"
+    - "National health data regulations vary by country"
+    - "Patient consent requirements differ across jurisdictions"
+    - "Budget: €10M EU research grant"
+    - "Must be operational in 24 months"
+
+expected_tensions:
+  - agent_pair: ["sovereign", "jurist"]
+    reason: "Data sovereignty vs cross-border data sharing"
+  - agent_pair: ["philosopher", "architect"]
+    reason: "Patient privacy vs research utility"
+  - agent_pair: ["ethnographer", "technologist"]
+    reason: "National regulatory cultures vs unified platform"
+  - agent_pair: ["ecosystem", "economist"]
+    reason: "Sustainability requirements vs budget constraints"
+
+expected_outcome_direction: |
+  ACCEPT with federated architecture: Data stays in national jurisdictions, federated
+  queries across borders. Differential privacy for aggregate statistics. Patient consent
+  management per national law. European cloud provider (Ionos, OVHcloud) with data
+  residency guarantees. Budget split: €6M technical, €2M compliance, €2M governance.
+
+test_specific_concerns:
+  sovereign:
+    - "Health data cannot leave national borders (legal + political)"
+    - "Federated learning: models travel, data stays"
+  jurist:
+    - "GDPR Article 9: Explicit consent required"
+    - "EDPB Guidelines on health data processing"
+    - "National variations: German strict, French centralized, Italian fragmented"
+  philosopher:
+    - "Patient autonomy: granular consent controls"
+    - "Research benefit vs privacy risk trade-off"
+    - "Secondary use of data requires renewed consent"
+  architect:
+    - "Federated architecture: query federation, not data centralization"
+    - "Differential privacy for aggregate queries"
+    - "Blockchain for consent audit trail (maybe)"
+  ethnographer:
+    - "German culture: patient skepticism of data sharing"
+    - "French culture: state-led health data governance"
+    - "Consensus-building across 5 national contexts"
+  technologist:
+    - "Encryption: end-to-end, zero-knowledge proofs"
+    - "Access controls: role-based, attribute-based"
+    - "Audit logs: immutable, regulators can review"
+  ecosystem:
+    - "Data center energy use: €500K/year"
+    - "Renewable energy requirements for research grant"
+  consumer_voice:
+    - "Patient rights: access, rectification, erasure"
+    - "Transparency: research purpose clearly communicated"
+  economist:
+    - "€10M budget: tight for 5-country platform"
+    - "Open-source components reduce licensing costs"

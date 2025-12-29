@@ -4,13 +4,17 @@ A sophisticated multi-agent system for strategic decision-making following Europ
 
 ## Overview
 
-The European Strategy Consortium is a LangGraph-based multi-agent system designed to provide strategic recommendations for European businesses. It features 11 specialized agents that debate proposals through structured tension protocols, ensuring decisions balance sovereignty, economics, legal compliance, and other critical factors.
+The European Strategy Consortium is a LangGraph-based multi-agent system designed to provide strategic recommendations for European businesses. It features **9 specialized agents + 1 meta-agent (CLA)** that debate proposals through structured tension protocols, ensuring decisions balance sovereignty, economics, legal compliance, cultural ergonomics, operational security, consumer protection, and other critical factors.
 
 ## Project Status
 
-**Phase**: SPARC Refinement - Iteration 1 (Core Infrastructure) ✅ COMPLETE
+**Phase**: Phase 2 Complete - Production Ready ✅
 
-**Completion**: 38% of total system (3 of 8 iterations)
+**Agents**: 9 core agents + CLA (Conservative Legalese Advocate)
+- ✅ Big Three: Sovereign, Economist, Jurist
+- ✅ Tier 1: Architect, Eco-System, Philosopher
+- ✅ Tier 4: Ethnographer, Technologist, Consumer Voice
+- ✅ Meta: CLA (zombie detection)
 
 ## Architecture
 
@@ -42,34 +46,72 @@ This iteration implements the foundational components:
    - **Conversation history preservation during failover** (critical for multi-turn debates)
    - Thread-safe for parallel agent execution
 
-4. **Agent Configurations**
-   - [`config/agents/sovereign.yaml`](config/agents/sovereign.yaml) - Guardian of Digital Autonomy
-   - [`config/agents/economist.yaml`](config/agents/economist.yaml) - Pragmatist of Sustainable Value
-   - [`config/agents/jurist.yaml`](config/agents/jurist.yaml) - Master of Regulatory Compliance
+4. **Agent Configurations** (9 agents + 1 meta-agent)
+   - **Big Three**:
+     - [`sovereign.yaml`](config/agents/sovereign.yaml) - Guardian of Digital Sovereignty
+     - [`economist.yaml`](config/agents/economist.yaml) - Pragmatist of Sustainable Value
+     - [`jurist.yaml`](config/agents/jurist.yaml) - Master of Regulatory Compliance
+   - **Tier 1**:
+     - [`architect.yaml`](config/agents/architect.yaml) - Systems Design Specialist
+     - [`ecosystem.yaml`](config/agents/ecosystem.yaml) - Environmental Sustainability Guardian
+     - [`philosopher.yaml`](config/agents/philosopher.yaml) - Ethics & Values Advocate
+   - **Tier 4**:
+     - [`ethnographer.yaml`](config/agents/ethnographer.yaml) - Cultural Ergonomics Specialist
+     - [`technologist.yaml`](config/agents/technologist.yaml) - Operational Security Expert (CISO)
+     - [`consumer_voice.yaml`](config/agents/consumer_voice.yaml) - Consumer Protection & Accessibility Champion
+   - **Meta**:
+     - [`cla.yaml`](config/agents/cla.yaml) - Conservative Legalese Advocate (zombie detection)
 
 5. **Comprehensive Test Suite**
-   - 34 unit tests covering all core components
-   - 78% code coverage
-   - All tests passing ✅
+   - All agent tests passing ✅
+   - Convergence validation tests ✅
+   - Multi-LLM failover tests ✅
+   - Performance benchmarks ✅
 
-## Installation
+## Quick Start
+
+### Installation
 
 ```bash
 # Clone repository
 git clone <repository-url>
-cd european-strategy-consortium
+cd europeanconsortium
 
 # Install dependencies
 pip install -e .
 
-# Install development dependencies
-pip install -e ".[dev]"
-
 # Set up environment variables
-export ANTHROPIC_API_KEY="your-key"
-export MISTRAL_API_KEY="your-key"
-export OPENAI_API_KEY="your-key"
-export GOOGLE_API_KEY="your-key"
+cp .env.example .env
+# Edit .env with your API keys
+```
+
+### Environment Configuration
+
+Required: At least one LLM provider API key
+```bash
+ANTHROPIC_API_KEY=sk-ant-your-key-here  # Recommended (Claude)
+# OR
+OPENAI_API_KEY=sk-proj-your-key-here    # Alternative
+```
+
+See [`.env.example`](.env.example) for full configuration options.
+
+### Running the Streamlit Demo
+
+```bash
+streamlit run app/streamlit_app.py
+```
+
+Then navigate to http://localhost:8501 to interact with the consortium.
+
+### Running Tests
+
+```bash
+# Run all tests
+python -m pytest tests/ -v
+
+# Run specific test suite
+python -m pytest tests/test_tier4_agents.py -v
 ```
 
 ## Running Tests
@@ -142,42 +184,57 @@ Robust multi-provider support:
 - Exponential backoff retry (2 attempts per provider)
 - Automatic failover on timeout/rate limit/API errors
 
-## Next Steps
+## The Agents
 
-### Iteration 2: Memory System
-- Chroma vector database integration
-- Hybrid B+C memory architecture
-- Case storage and retrieval
-- Outcome-based weighting
+### Big Three (Foundational)
+1. **Sovereign** - Ensures European digital sovereignty and GDPR compliance
+2. **Economist** - Ensures financial viability and sustainable value creation
+3. **Jurist** - Ensures legal compliance and manages regulatory risk
 
-### Iteration 4: Tension Protocols
-- 5 tension protocol handlers
-- Sovereign ↔ Economist protocol
-- Eco-System ↔ Architect protocol
-- Jurist ↔ Philosopher protocol
-- Operator ↔ Strategy protocol
-- Futurist ↔ All protocol
+### Tier 1 (Technical & Values)
+4. **Architect** - Ensures technical feasibility and sound systems design
+5. **Eco-System** - Ensures environmental sustainability and planetary boundaries
+6. **Philosopher** - Ensures ethical alignment and human dignity
 
-### Iteration 5: Supervisor & Routing
-- LangGraph main orchestration graph
-- Agent routing logic
-- Convergence testing
-- Escalation handling
+### Tier 4 (Specialized)
+7. **Ethnographer** - Ensures cultural ergonomics across Europe's diverse contexts
+8. **Technologist** - Ensures operational security (CISO perspective)
+9. **Consumer Voice** - Protects end-users, champions accessibility
 
-### Iterations 6-7: Remaining Agents
-- Architect (System Design Specialist)
-- Philosopher (Ethics & Values Guardian)
-- Ethnographer (Cultural Context Expert)
-- Technologist (Innovation Assessor)
-- Consumer Voice (User Experience Advocate)
-- Futurist (Long-term Impact Analyst)
-- Operator (Operational Feasibility Expert)
-- Eco-System (Environmental Impact Assessor)
+### Meta-Agent
+10. **CLA** (Conservative Legalese Advocate) - Prevents "zombie" programs that persist indefinitely without achieving goals
 
-### Iteration 8: Historical Test Cases
-- 8 comprehensive test scenarios
-- End-to-end validation
-- Performance benchmarking
+For detailed agent documentation, see [`docs/AGENTS.md`](docs/AGENTS.md).
+
+## The "Yes, If" Protocol
+
+Agents don't simply approve or reject proposals—they propose **conditional acceptance**:
+
+- **Sovereign**: "Yes, if we use EU cloud providers or encrypt with customer-managed keys"
+- **Economist**: "Yes, if we start with fine-tuned model (€2M) instead of custom LLM (€14M)"
+- **Ethnographer**: "Yes, if we adapt rollout for German works councils (6-month consultation)"
+- **Technologist**: "Yes, if we use HashiCorp Vault for secrets, not environment variables"
+
+The consortium **converges** on a recommendation that satisfies all agents' conditions, or **escalates** to human decision-makers when consensus cannot be reached.
+
+**Target Metrics**:
+- Autonomous convergence rate: >70%
+- Human escalation rate: <30%
+- Average iterations to convergence: <5
+
+## Example Use Cases
+
+- **Cloud Strategy**: "Should we use AWS for our German automotive R&D data?"
+  - Tensions: Sovereign (data sovereignty) ↔ Economist (cloud costs)
+  - Resolution: AWS EU regions + encryption + customer-managed keys + Trust Premium positioning
+
+- **AI Hiring System**: "Deploy AI for CV screening across EU offices?"
+  - Tensions: Jurist (EU AI Act compliance) ↔ Philosopher (bias/fairness) ↔ Ethnographer (cultural hiring norms)
+  - Resolution: Human-in-loop design + bias testing + works council approval + candidate right to explanation
+
+- **Innovation Fund**: "Create €50B EU cloud/AI fund?"
+  - Tensions: CLA (zombie risk) ↔ Sovereign (strategic autonomy) ↔ Economist (ROI)
+  - Resolution: 10-year sunset clause + performance milestones + market share targets + independent audit
 
 ## Documentation
 

@@ -77,61 +77,6 @@ class EcosystemAgent(Agent):
     
     def invoke(self, state: Dict[str, Any]) -> Dict[str, Any]:
         """Evaluate proposal from sustainability perspective."""
-        prompt = self._build_prompt(state)
-        response_text = self._invoke_llm(prompt)
-        return self._parse_response(response_text)
-    
-    def _build_prompt(self, state: Dict[str, Any]) -> str:
-        """Build sustainability-focused prompt."""
-        parts = [
-            "ENVIRONMENTAL SUSTAINABILITY REVIEW REQUEST:",
-            f"\nSTRATEGIC QUERY: {state.get('query', 'No query')}",
-            f"\nCONTEXT: {state.get('context', {})}",
-        ]
-        
-        if state.get("agent_responses"):
-            parts.append("\nOTHER AGENT ASSESSMENTS:")
-            for agent_id, response in state["agent_responses"].items():
-                if agent_id != "ecosystem":
-                    rating = response.get('rating', 'N/A')
-                    reasoning = response.get('reasoning', '')[:200]
-                    parts.append(f"\n{agent_id.upper()}: {rating}")
-                    parts.append(f"  {reasoning}...")
-        
-        parts.append("""
-
-INSTRUCTIONS:
-Analyze this proposal from an environmental sustainability perspective.
-Consider:
-1. Carbon footprint across all scopes (1, 2, 3)
-2. Software Carbon Intensity (SCI) implications
-3. Jevons Paradox and rebound effects
-4. Planetary boundary impacts
-5. Lifecycle environmental costs
-
-Provide your assessment using the specified format.""")
-        
-        return "\n".join(parts)
-    
-    def _parse_response(self, response_text: str) -> Dict[str, Any]:
-        """Parse Eco-System response."""
-        rating = "WARN"
-        for r in ["ENDORSE", "ACCEPT", "WARN", "BLOCK"]:
-            if r in response_text.upper():
-                rating = r
-                break
-        
-        confidence = 75
-        conf_match = re.search(
-            r"CONFIDENCE:\s*(\d+)",
-            response_text,
-            re.IGNORECASE
-        )
-        if conf_match:
-            confidence = min(100, max(0, int(conf_match.group(1))))
-        
-        return {
-            "rating": rating,
-            "confidence": confidence,
-            "reasoning": response_text
-        }
+        response_text = self._invoke_llm(state)
+        agent_response = super()._parse_response(response_text)
+        return agent_response.to_dict()

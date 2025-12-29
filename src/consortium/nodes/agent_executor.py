@@ -19,6 +19,9 @@ def agent_executor_node(state: Dict[str, Any]) -> Dict[str, Any]:
         from agents.architect import ArchitectAgent
         from agents.ecosystem import EcosystemAgent
         from agents.philosopher import PhilosopherAgent
+        from agents.ethnographer import EthnographerAgent
+        from agents.technologist import TechnologistAgent
+        from agents.consumer_voice import ConsumerVoiceAgent
         from src.consortium.config import ConfigManager
     except ImportError as e:
         logger.error(f"Import failed: {e}")
@@ -34,15 +37,21 @@ def agent_executor_node(state: Dict[str, Any]) -> Dict[str, Any]:
         }
     
     config_manager = ConfigManager()
-    
-    # Registry of all available agents
+
+    # Registry of all available agents (9 total across all tiers)
     available_agents = {
+        # Big Three
         "sovereign": SovereignAgent,
         "economist": EconomistAgent,
         "jurist": JuristAgent,
+        # Tier 1
         "architect": ArchitectAgent,
         "ecosystem": EcosystemAgent,
         "philosopher": PhilosopherAgent,
+        # Tier 4
+        "ethnographer": EthnographerAgent,
+        "technologist": TechnologistAgent,
+        "consumer_voice": ConsumerVoiceAgent,
     }
     
     agent_responses = {}

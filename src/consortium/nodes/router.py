@@ -8,18 +8,27 @@ logger = logging.getLogger(__name__)
 def router_node(state: Dict[str, Any]) -> Dict[str, Any]:
     """
     Route query to appropriate agents.
-    
-    Now includes Tier 1 agents: Architect, Eco-System, Philosopher
+
+    Now includes all 9 agents across all tiers:
+    - Big Three: Sovereign, Economist, Jurist
+    - Tier 1: Architect, Eco-System, Philosopher
+    - Tier 4: Ethnographer, Technologist, Consumer Voice
     """
-    
-    # Core agents for comprehensive analysis
+
+    # All agents for comprehensive analysis
     triggered_agents = [
-        "sovereign",    # Data sovereignty
-        "economist",    # Financial viability
-        "jurist",       # Legal compliance
-        "architect",    # Technical feasibility
-        "ecosystem",    # Sustainability
-        "philosopher",  # Ethics alignment
+        # Big Three (foundational)
+        "sovereign",        # Data sovereignty
+        "economist",        # Financial viability
+        "jurist",           # Legal compliance
+        # Tier 1 (technical & values)
+        "architect",        # Technical feasibility
+        "ecosystem",        # Sustainability
+        "philosopher",      # Ethics alignment
+        # Tier 4 (specialized)
+        "ethnographer",     # Cultural ergonomics
+        "technologist",     # Operational security (CISO)
+        "consumer_voice",   # Consumer protection & accessibility
     ]
     
     query = state.get("query", "")

@@ -1,0 +1,52 @@
+query: "Should our fintech startup use AWS for all infrastructure, or invest in European alternatives?"
+
+context:
+  industry: "Financial Technology (Payments)"
+  company_size: "Startup (50 employees)"
+  market: "Germany, expanding to France and Netherlands"
+  current_state: "Prototype on AWS, approaching product launch"
+  constraints:
+    - "Limited budget: €500K runway for next 12 months"
+    - "Need to be market-ready in 3 months"
+    - "BaFin (German financial regulator) approval required"
+    - "PSD2 compliance mandatory"
+    - "Investor pressure to scale fast"
+
+expected_tensions:
+  - agent_pair: ["sovereign", "economist"]
+    reason: "European cloud premium vs AWS cost/speed"
+  - agent_pair: ["architect", "philosopher"]
+    reason: "Technical pragmatism vs sovereignty values"
+  - agent_pair: ["jurist", "economist"]
+    reason: "Compliance costs vs time-to-market"
+
+expected_outcome_direction: |
+  ACCEPT AWS with conditions: Use AWS EU regions with GDPR commitments. Implement
+  encryption and access controls. Budget for potential migration (build abstraction layer).
+  Position as "European fintech on global infrastructure." Re-evaluate at Series A when
+  budget allows European alternatives.
+
+test_specific_concerns:
+  sovereign:
+    - "Financial data in US cloud jurisdiction"
+    - "AWS Standard Contractual Clauses sufficient?"
+  economist:
+    - "AWS: €3K/month vs European cloud: €8K/month"
+    - "Startup survival: time-to-market critical"
+    - "Migration costs later: €200K (vs €60K premium now)"
+  jurist:
+    - "BaFin approval requires data protection measures"
+    - "PSD2 compliance: encryption, access logs"
+    - "AWS GDPR Data Processing Addendum adequate"
+  architect:
+    - "AWS maturity: 200+ services vs European: 50 services"
+    - "Technical debt if building abstraction layer"
+    - "Lock-in risk manageable for financial workloads"
+  philosopher:
+    - "Pragmatism vs ideals: startup survival first"
+    - "European alternative exists but costs 2.5x more"
+  technologist:
+    - "Encryption: AWS KMS acceptable with customer-managed keys"
+    - "Access controls: IAM policies + MFA required"
+  consumer_voice:
+    - "Customer trust: 'Your data stays in Europe' messaging"

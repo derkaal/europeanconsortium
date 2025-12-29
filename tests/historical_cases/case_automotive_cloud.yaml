@@ -1,0 +1,44 @@
+query: "Should we move our automotive R&D data and simulation workloads to a US cloud provider?"
+
+context:
+  industry: "Automotive Manufacturing"
+  company_size: "Large (50,000+ employees)"
+  market: "Germany, primary EU operations"
+  current_state: "On-premises HPC cluster for simulations, proprietary CAD data"
+  constraints:
+    - "Works council (Betriebsrat) must approve IT changes affecting workforce"
+    - "Proprietary engine designs are trade secrets"
+    - "Real-time collaboration with suppliers across EU"
+    - "Cost pressure from board to reduce CAPEX"
+
+expected_tensions:
+  - agent_pair: ["sovereign", "economist"]
+    reason: "Data sovereignty costs vs cloud economics"
+  - agent_pair: ["ethnographer", "architect"]
+    reason: "German consensus culture vs rapid cloud migration"
+  - agent_pair: ["technologist", "economist"]
+    reason: "Security controls increase costs"
+  - agent_pair: ["jurist", "architect"]
+    reason: "Trade secret protection vs cloud scalability"
+
+expected_outcome_direction: |
+  ACCEPT with conditions: European cloud provider (OVHcloud, Scaleway) or AWS EU with
+  data sovereignty controls. Works council consultation required (6+ months). Budget
+  for encryption and key management (€500K+). Phased migration starting with non-critical
+  workloads. Trust premium positioning: "German Engineering, European Cloud."
+
+test_specific_concerns:
+  sovereign:
+    - "US Cloud Act allows US government access to data"
+    - "Trade secrets in foreign jurisdiction"
+  economist:
+    - "On-prem TCO: €10M/year vs cloud: €6-8M/year"
+    - "CAPEX to OPEX transition attractive to CFO"
+  ethnographer:
+    - "German works council requires 6-month consultation"
+    - "Engineering culture values control and precision"
+  technologist:
+    - "Encryption in use required for trade secrets"
+    - "Key management must remain on-premises (HSM)"
+  consumer_voice:
+    - "Not directly applicable (B2B scenario)"

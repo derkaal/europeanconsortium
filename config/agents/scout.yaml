@@ -1,0 +1,132 @@
+# The Scout - Strategic Intelligence Gatherer
+agent_id: scout
+name: "The Scout"
+version: "1.0.0"
+
+mandate: |
+  Ensure the consortium debates with current, accurate intelligence.
+  Identify knowledge gaps and fill them before analysis begins.
+
+core_principle: "Stale Intelligence is Dangerous Intelligence"
+
+role_in_workflow: "upstream_preprocessor"
+execution_order: 1  # Runs before all other agents
+
+# Search provider configuration
+search_config:
+  mode: "failover"  # "failover" or "aggregate"
+
+  providers:
+    tavily:
+      enabled: true
+      priority: 1
+      search_depth: "basic"  # "basic" or "advanced"
+      # API key from TAVILY_API_KEY env var
+
+    brave:
+      enabled: true
+      priority: 2
+      default_country: "DE"  # Germany default for EU focus
+      search_lang: "en"
+      freshness: "pm"  # Past month for recent results
+      # API key from BRAVE_API_KEY env var
+
+  # Fallback behavior
+  fallback:
+    on_all_fail: "continue_without_research"
+    log_level: "warning"
+
+research_config:
+  max_searches: 15
+  max_results_per_search: 3
+
+  source_priority:
+    tier_1_official:
+      - "EUR-Lex"
+      - "European Commission"
+      - "EDPB"
+      - "ENISA"
+      - "ECJ"
+    tier_2_company:
+      - "Mistral AI"
+      - "Anthropic"
+      - "OpenAI"
+      - "AWS"
+      - "Google Cloud"
+    tier_3_news:
+      - "Reuters"
+      - "Politico EU"
+      - "Bloomberg"
+      - "Financial Times"
+    tier_4_tech:
+      - "Hugging Face"
+      - "The Register"
+      - "Ars Technica"
+
+  recency_preference:
+    high: ["regulations", "enforcement", "pricing", "releases", "announcements"]
+    medium: ["trends", "research", "analysis", "funding"]
+    low: ["methodology", "frameworks", "history", "tutorials"]
+
+# Agent domain mapping for targeted research
+agent_domain_mapping:
+  sovereign:
+    keywords: ["cloud", "data residency", "sovereignty", "Gaia-X", "CLOUD Act"]
+    sources: ["AWS Blog", "Google Cloud Blog", "Gaia-X AISBL", "EUR-Lex"]
+    brave_country: "DE"
+
+  intelligence_sovereign:
+    keywords: ["AI model", "LLM", "Mistral", "GPT", "European AI", "open source AI"]
+    sources: ["Hugging Face", "Mistral Blog", "Anthropic", "OpenAI Blog"]
+    brave_freshness: "pw"  # Past week - AI moves fast
+
+  economist:
+    keywords: ["pricing", "cost", "funding", "investment", "market", "API pricing"]
+    sources: ["Company pricing pages", "Crunchbase", "Reuters", "Bloomberg"]
+    brave_freshness: "pm"
+
+  jurist:
+    keywords: ["GDPR", "AI Act", "regulation", "enforcement", "compliance", "ECJ"]
+    sources: ["EUR-Lex", "EDPB", "GDPRHub", "European Commission"]
+    brave_country: "DE"
+
+  ecosystem:
+    keywords: ["carbon", "sustainability", "green", "energy", "climate", "SCI"]
+    sources: ["Green Software Foundation", "IEA", "EU Climate"]
+
+  philosopher:
+    keywords: ["ethics", "bias", "fairness", "harm", "rights", "dark patterns"]
+    sources: ["BEUC", "AlgorithmWatch", "AI Ethics Guidelines"]
+
+  ethnographer:
+    keywords: ["cultural ergonomics", "user experience", "cultural adaptation"]
+    sources: ["UX research", "Cultural studies"]
+
+  technologist:
+    keywords: ["operational security", "CISO", "cybersecurity", "security"]
+    sources: ["Security blogs", "ENISA"]
+
+  consumer_voice:
+    keywords: ["consumer protection", "accessibility", "user rights"]
+    sources: ["BEUC", "Consumer organizations"]
+
+  founder:
+    keywords: ["feature subsidy", "regulatory arbitrage", "startup strategy"]
+    sources: ["Startup news", "Funding announcements"]
+
+  alchemist:
+    keywords: ["regulation to value", "compliance innovation", "advantage"]
+    sources: ["Strategy publications"]
+
+  architect:
+    keywords: ["LangGraph", "multi-agent systems", "AI architecture"]
+    sources: ["LangChain docs", "Technical blogs"]
+
+output_format:
+  include_executive_summary: true
+  include_critical_updates: true
+  include_agent_briefings: true
+  include_information_gaps: true
+  include_conflicting_info: true
+  include_provider_metadata: true  # Which search provider returned each result
+  max_findings_per_agent: 5

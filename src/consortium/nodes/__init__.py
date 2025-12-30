@@ -8,6 +8,7 @@ from .convergence_test import convergence_test_node
 from .synthesizer import synthesizer_node
 from .cla_gate import cla_gate_node, route_after_cla_gate
 from .architect_revision import architect_revision_node
+from .scout_node import create_scout_node, inject_briefing_into_agent_context
 
 __all__ = [
     "router_node",
@@ -19,4 +20,6 @@ __all__ = [
     "cla_gate_node",
     "route_after_cla_gate",
     "architect_revision_node",
+    "create_scout_node",
+    "inject_briefing_into_agent_context",
 ]

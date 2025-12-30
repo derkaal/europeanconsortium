@@ -132,19 +132,23 @@ class CLAAgent(Agent):
     
     def _parse_cla_response(self, response_text: str) -> Dict[str, Any]:
         """Parse CLA response into structured format.
-        
+
         Args:
             response_text: Raw LLM response
-            
+
         Returns:
             Structured CLA review
         """
+        logger.debug(f"CLA parsing response (length: {len(response_text)} chars)")
+
         # Extract verdict
         verdict = "ZOMBIE_RISK"
         if "STRUCTURALLY_CREDIBLE" in response_text.upper():
             verdict = "STRUCTURALLY_CREDIBLE"
         elif "FRAGILE_CONSENSUS" in response_text.upper():
             verdict = "FRAGILE_CONSENSUS"
+
+        logger.debug(f"CLA verdict extracted: {verdict}")
         
         # Extract failed tests
         failed_tests = []
@@ -178,6 +182,11 @@ class CLAAgent(Agent):
             if critique_match
             else "No specific critique provided."
         )
+
+        if critique == "No specific critique provided.":
+            logger.warning("CLA response missing CRITIQUE field")
+        else:
+            logger.debug(f"CLA critique extracted: {critique[:100]}...")
         
         # Extract mechanism patch
         mechanism_patch = None
@@ -215,6 +224,9 @@ class CLAAgent(Agent):
                     else "Requires-Approval"
                 )
             }
+            logger.debug(f"CLA mechanism patch extracted: {mechanism_patch}")
+        else:
+            logger.warning("CLA response missing MECHANISM_PATCH fields (TRIGGER/ACTION not found)")
         
         return {
             "verdict": verdict,

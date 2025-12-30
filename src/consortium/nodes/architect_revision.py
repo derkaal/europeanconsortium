@@ -24,9 +24,19 @@ def architect_revision_node(state: Dict[str, Any]) -> Dict[str, Any]:
     """
     cla_review = state.get("cla_review", {})
     mechanism_patch = cla_review.get("mechanism_patch", {})
-    
+
     if not mechanism_patch:
-        logger.warning("No mechanism patch from CLA, opening gate anyway")
+        verdict = cla_review.get("verdict", "UNKNOWN")
+        failed_tests = cla_review.get("failed_tests", [])
+        critique = cla_review.get("critique", "No specific critique provided.")
+
+        logger.warning("⚠ No mechanism patch from CLA, opening gate anyway")
+        logger.warning(f"  CLA Verdict: {verdict}")
+        logger.warning(f"  Failed Tests: {failed_tests}")
+        logger.warning(f"  Critique: {critique}")
+        logger.warning("  → This may indicate the CLA's response was not properly formatted")
+        logger.warning("  → Check that the LLM response includes TRIGGER, ACTION, and AUTHORITY fields")
+
         return {"cla_gate_status": "OPEN"}
     
     logger.info("Architect: Integrating CLA mechanism patch...")

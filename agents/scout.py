@@ -69,6 +69,32 @@ class ScoutAgent:
         self.config = config or {}
         self.max_searches = self.config.get("max_searches", 15)
 
+        # Initialize budget manager and cache (if enabled)
+        self.budget_manager = None
+        self.search_cache = None
+
+        budget_config = self.config.get("budgets", {})
+        if budget_config.get("enabled", False):
+            from src.consortium.tools.scout_budget import ScoutBudgetManager
+            self.budget_manager = ScoutBudgetManager(
+                persist_path=budget_config.get("persist_path", "data/scout_budget.db"),
+                monthly_limit=budget_config.get("monthly_limit", 900),
+                per_query_limit=budget_config.get("per_query_limit", 15),
+                per_agent_limit=budget_config.get("per_agent_limit", 3),
+                time_budget_seconds=budget_config.get("time_budget_seconds", 30),
+                diminishing_returns_threshold=budget_config.get("diminishing_returns_threshold", 3),
+                timezone=budget_config.get("timezone", "Europe/Berlin")
+            )
+            logger.info("✓ Scout budget manager initialized")
+
+        cache_config = self.config.get("cache", {})
+        if cache_config.get("enabled", False):
+            from src.consortium.tools.search_cache import SearchCache
+            self.search_cache = SearchCache(
+                db_path=cache_config.get("db_path", "data/scout_cache.db")
+            )
+            logger.info("✓ Scout search cache initialized")
+
         # Agent domains for targeted research
         self.agent_domains = {
             "sovereign": [
@@ -320,18 +346,41 @@ Only include agents relevant to this query."""
             searches_executed=len(findings)
         )
 
-    async def research(self, query: str, context: Dict[str, Any]) -> ResearchBriefing:
+    async def research(self, query: str, context: Dict[str, Any], force_refresh: bool = False) -> ResearchBriefing:
         """
-        Main entry point: conduct full research cycle.
+        Main entry point: conduct full research cycle with caching and budget management.
 
         Args:
             query: The strategic question
             context: Query context (industry, markets, etc.)
+            force_refresh: If True, bypass cache and force new research
 
         Returns:
             Complete ResearchBriefing for the consortium
         """
         logger.info(f"Scout beginning research for: {query[:100]}...")
+
+        # Check cache first (if enabled and not forcing refresh)
+        if self.search_cache and not force_refresh:
+            cached = self.search_cache.get(query, context, force_refresh=False)
+            if cached:
+                logger.info("✅ Returning cached research briefing (no API calls)")
+                # Return cached briefing as ResearchBriefing object
+                return ResearchBriefing(**cached)
+
+        # Check budget status (if enabled)
+        if self.budget_manager:
+            status = self.budget_manager.get_budget_status()
+            logger.info(
+                f"💰 Budget status: {status.monthly_remaining}/{status.monthly_limit} remaining this month"
+            )
+
+        # Initialize budget tracking state
+        if self.budget_manager:
+            from src.consortium.tools.scout_budget import ScoutState
+            budget_state = ScoutState(start_time=datetime.now(timezone.utc))
+        else:
+            budget_state = None
 
         # Phase 1: Analyze query (would use LLM in production)
         # For now, use domain mapping
@@ -346,15 +395,94 @@ Only include agents relevant to this query."""
 
         logger.info(f"Scout planned {len(search_plans)} searches for agents: {relevant_agents}")
 
-        # Phase 3: Execute research
-        findings = await self.execute_research(search_plans)
+        # Phase 3: Execute research with budget control
+        findings = await self._execute_research_with_budget(search_plans, budget_state)
 
         logger.info(f"Scout gathered {len(findings)} findings")
 
         # Phase 4: Synthesize briefing
         briefing = self.synthesize_briefing(query, context, findings)
 
+        # Cache the briefing (if caching enabled)
+        if self.search_cache:
+            # Determine TTL category based on query keywords
+            ttl_category = self._determine_ttl_category(query)
+            self.search_cache.put(
+                query, context, briefing.model_dump(), ttl_category=ttl_category
+            )
+
         return briefing
+
+    def _determine_ttl_category(self, query: str) -> str:
+        """Determine cache TTL category based on query content."""
+        query_lower = query.lower()
+
+        if any(kw in query_lower for kw in ["regulation", "gdpr", "ai act", "law", "compliance"]):
+            return "regulatory"
+        elif any(kw in query_lower for kw in ["pricing", "cost", "price"]):
+            return "pricing"
+        elif any(kw in query_lower for kw in ["news", "announcement", "breaking"]):
+            return "news"
+        elif any(kw in query_lower for kw in ["ai model", "llm", "gpt", "release"]):
+            return "ai_models"
+        else:
+            return "default"
+
+    async def _execute_research_with_budget(
+        self,
+        search_plans: List[Dict[str, Any]],
+        budget_state: Optional[Any]
+    ) -> List[Dict[str, Any]]:
+        """
+        Execute research with budget control and stop conditions.
+
+        Returns list of findings.
+        """
+        findings = []
+
+        if not self.search_tool:
+            logger.warning("No search tool configured for Scout")
+            return findings
+
+        for plan in search_plans:
+            # Check stop conditions before each search
+            if budget_state and self.budget_manager:
+                should_stop, reason = self.budget_manager.should_stop(budget_state)
+                if should_stop:
+                    logger.warning(f"⏹️  Scout stopping: {reason}")
+                    break
+
+            try:
+                # Execute search
+                results = await self.search_tool.search(plan["query"])
+
+                # Record results with budget manager
+                cache_hit = False  # Real cache hit handled earlier; this is a miss
+                if budget_state and self.budget_manager:
+                    new_facts = self.budget_manager.record_search_results(
+                        budget_state,
+                        plan["agent_id"],
+                        results,
+                        cache_hit=cache_hit
+                    )
+                    logger.info(f"📊 Found {new_facts} new facts (streak: {budget_state.no_new_facts_streak})")
+
+                # Process results
+                for result in results[:3]:  # Top 3 results per query
+                    findings.append({
+                        "agent_id": plan["agent_id"],
+                        "topic": plan["topic"],
+                        "title": result.get("title", ""),
+                        "snippet": result.get("snippet", ""),
+                        "url": result.get("url", ""),
+                        "date": result.get("date"),
+                        "source": result.get("source", "Web")
+                    })
+
+            except Exception as e:
+                logger.error(f"Search failed for '{plan['query']}': {e}")
+
+        return findings
 
     def _identify_relevant_agents(self, query: str, context: Dict[str, Any]) -> List[str]:
         """Identify which agents are relevant to this query."""

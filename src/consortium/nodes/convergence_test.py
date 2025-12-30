@@ -42,7 +42,8 @@ def convergence_test_node(state: ConsortiumState) -> Dict[str, Any]:
         return {
             "convergence_status": {
                 "converged": False,
-                "reason": "No agent responses yet"
+                "reason": "No agent responses yet",
+                "positive_percentage": 0
             },
             "iteration_count": new_iteration_count
         }
@@ -50,6 +51,15 @@ def convergence_test_node(state: ConsortiumState) -> Dict[str, Any]:
     logger.info(
         f"Testing convergence for {len(responses)} agent responses "
         f"(iteration {new_iteration_count})"
+    )
+    
+    # Calculate positive percentage (always needed for UI display)
+    positive = [
+        aid for aid, r in responses.items()
+        if r.get("rating") in ["ACCEPT", "ENDORSE"]
+    ]
+    positive_pct = (
+        (len(positive) / len(responses)) * 100 if responses else 0
     )
     
     # FORCED CONVERGENCE: After 3 iterations, stop regardless
@@ -66,6 +76,7 @@ def convergence_test_node(state: ConsortiumState) -> Dict[str, Any]:
                     f"iterations (max: {MAX_ITERATIONS})"
                 ),
                 "forced": True,
+                "positive_percentage": positive_pct,
                 "iteration_count": new_iteration_count
             },
             "iteration_count": new_iteration_count
@@ -86,6 +97,7 @@ def convergence_test_node(state: ConsortiumState) -> Dict[str, Any]:
                 "converged": False,
                 "reason": f"Blocking concerns from: {', '.join(blocks)}",
                 "blocking_agents": blocks,
+                "positive_percentage": positive_pct,
                 "iteration_count": new_iteration_count
             },
             "iteration_count": new_iteration_count
@@ -105,6 +117,7 @@ def convergence_test_node(state: ConsortiumState) -> Dict[str, Any]:
                     f"Too many warnings ({len(warns)} > 2): "
                     f"{', '.join(warns)}"
                 ),
+                "positive_percentage": positive_pct,
                 "iteration_count": new_iteration_count
             },
             "iteration_count": new_iteration_count
@@ -133,19 +146,13 @@ def convergence_test_node(state: ConsortiumState) -> Dict[str, Any]:
                     f"({avg_confidence_pct:.1f}% ≤ 70%)"
                 ),
                 "avg_confidence": avg_confidence_pct,
+                "positive_percentage": positive_pct,
                 "iteration_count": new_iteration_count
             },
             "iteration_count": new_iteration_count
         }
     
-    # Check 4: ≥60% ACCEPT/ENDORSE
-    positive = [
-        aid for aid, r in responses.items()
-        if r.get("rating") in ["ACCEPT", "ENDORSE"]
-    ]
-    positive_pct = (
-        (len(positive) / len(responses)) * 100 if responses else 0
-    )
+    # Check 4: ≥60% ACCEPT/ENDORSE (already calculated above)
     
     if positive_pct < 60:
         logger.info(

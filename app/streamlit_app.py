@@ -904,12 +904,17 @@ if analyze_button:
                                         total = len(enabled_agents)
                                         st.write(f"  → {completed}/{total} agents completed")
 
-                                # Store final result
-                                if "final_recommendation" in output:
+                                # Store final result (with null check)
+                                if output and isinstance(output, dict) and "final_recommendation" in output:
+                                    result = output
+                                
+                                # Also store the last valid state as fallback
+                                if output and isinstance(output, dict):
                                     result = output
 
                         # Ensure we have a result
                         if result is None:
+                            st.error("Graph execution returned no valid state. Using initial state as fallback.")
                             result = initial_state  # Fallback to last known state
 
                         # Complete the status
@@ -938,10 +943,11 @@ if analyze_button:
                         }
                         
                         # Display success
+                        # Use agent_responses to count agents, fallback to enabled_agents
+                        agent_count = len(result.get('agent_responses', {})) or len(enabled_agents)
                         st.success(
                             f"Analysis complete! "
-                            f"{len(result['triggered_agents'])} agents "
-                            "consulted."
+                            f"{agent_count} agents consulted."
                         )
                         
                         # Agent responses section
@@ -1019,11 +1025,12 @@ if analyze_button:
                         else:
                             st.warning("**Rating: ESCALATED TO HUMAN**")
                         
-                        if 'positive_percentage' in conv:
-                            st.metric(
-                                "Consensus",
-                                f"{conv['positive_percentage']:.0f}%"
-                            )
+                        # Always display consensus percentage (with fallback to 0)
+                        positive_pct = conv.get('positive_percentage', 0)
+                        st.metric(
+                            "Consensus",
+                            f"{positive_pct:.0f}%"
+                        )
                         st.metric("Iterations", result.get('iteration_count', 1))
                         
                         st.subheader("Pyramid Principle Summary")

@@ -249,7 +249,7 @@ class BraveSearchTool(BaseSearchTool):
             "count": min(max_results, 20),  # Brave max is 20
             "country": country,
             "search_lang": search_lang,
-            "text_decorations": False,  # No bold markers in snippets
+            "text_decorations": "false",  # No bold markers in snippets (must be string)
             "safesearch": "moderate"
         }
 

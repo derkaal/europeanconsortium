@@ -8,12 +8,16 @@ real-time deliberation results.
 import streamlit as st
 import sys
 import os
+import yaml
+import logging
+from pathlib import Path
 
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Import consortium components
 from src.consortium import create_consortium_graph, create_initial_state
+from src.consortium.tiered_llm_provider import get_tiered_provider
 
 # PDF generation
 try:
@@ -160,32 +164,86 @@ with st.sidebar:
 
     st.divider()
 
+    # Model Configuration Display
+    with st.expander("🤖 Model Configuration", expanded=False):
+        st.subheader("Tiered LLM System")
+        st.markdown("""
+        Models are automatically selected based on task complexity:
+        """)
+        
+        # Load model tiers config
+        try:
+            config_path = Path("config/model_tiers.yaml")
+            if config_path.exists():
+                with open(config_path) as f:
+                    model_config = yaml.safe_load(f)
+                    tiers = model_config.get("model_tiers", {})
+                    
+                    # Display each tier
+                    for tier_name, tier_data in tiers.items():
+                        st.markdown(f"**{tier_name.upper()} Tier**")
+                        st.caption(tier_data.get("description", ""))
+                        
+                        primary = tier_data.get("primary", {})
+                        st.text(f"  Primary: {primary.get('provider', 'N/A')} - {primary.get('model', 'N/A')}")
+                        
+                        fallback1 = tier_data.get("fallback_1", {})
+                        if fallback1:
+                            st.text(f"  Fallback 1: {fallback1.get('provider', 'N/A')} - {fallback1.get('model', 'N/A')}")
+                        
+                        fallback2 = tier_data.get("fallback_2", {})
+                        if fallback2:
+                            st.text(f"  Fallback 2: {fallback2.get('provider', 'N/A')} - {fallback2.get('model', 'N/A')}")
+                        
+                        st.divider()
+            else:
+                st.warning("Model configuration file not found")
+        except Exception as e:
+            st.error(f"Error loading model configuration: {e}")
+    
+    # Cost Tracker Display
+    with st.expander("💰 Cost Tracker", expanded=False):
+        st.subheader("Session Cost Summary")
+        
+        # Initialize cost tracking in session state
+        if 'cost_summary' not in st.session_state:
+            st.session_state.cost_summary = {
+                'total_cost_usd': 0.0,
+                'costs_by_tier': {'reasoning': 0.0, 'standard': 0.0, 'fast': 0.0, 'embedding': 0.0},
+                'calls_by_tier': {'reasoning': 0, 'standard': 0, 'fast': 0, 'embedding': 0}
+            }
+        
+        cost_summary = st.session_state.cost_summary
+        
+        # Display total cost
+        st.metric("Total Session Cost", f"${cost_summary['total_cost_usd']:.4f}")
+        
+        # Display breakdown by tier
+        st.markdown("**Cost by Tier:**")
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.metric("Reasoning", f"${cost_summary['costs_by_tier']['reasoning']:.4f}",
+                     f"{cost_summary['calls_by_tier']['reasoning']} calls")
+            st.metric("Standard", f"${cost_summary['costs_by_tier']['standard']:.4f}",
+                     f"{cost_summary['calls_by_tier']['standard']} calls")
+        
+        with col2:
+            st.metric("Fast", f"${cost_summary['costs_by_tier']['fast']:.4f}",
+                     f"{cost_summary['calls_by_tier']['fast']} calls")
+            st.metric("Embedding", f"${cost_summary['costs_by_tier']['embedding']:.4f}",
+                     f"{cost_summary['calls_by_tier']['embedding']} calls")
+        
+        if st.button("Reset Cost Tracker"):
+            st.session_state.cost_summary = {
+                'total_cost_usd': 0.0,
+                'costs_by_tier': {'reasoning': 0.0, 'standard': 0.0, 'fast': 0.0, 'embedding': 0.0},
+                'calls_by_tier': {'reasoning': 0, 'standard': 0, 'fast': 0, 'embedding': 0}
+            }
+            st.rerun()
+
     # Advanced settings
     with st.expander("Advanced Settings"):
-        st.subheader("LLM Provider")
-        provider_choice = st.selectbox(
-            "Primary LLM Provider",
-            [
-                "Anthropic (Claude)",
-                "OpenAI (GPT-4)",
-                "Mistral",
-                "Google (Gemini)"
-            ],
-            index=0,
-            help="Select which LLM provider to use. "
-                 "System will failover to others if primary fails."
-        )
-        
-        # Map display names to provider names
-        provider_map = {
-            "Anthropic (Claude)": "anthropic",
-            "OpenAI (GPT-4)": "openai",
-            "Mistral": "mistral",
-            "Google (Gemini)": "gemini"
-        }
-        selected_provider = provider_map[provider_choice]
-        
-        st.divider()
         st.subheader("Consensus Settings")
         max_iterations = st.slider("Max Consensus Iterations", 1, 10, 5)
         convergence_threshold = st.slider(
@@ -634,11 +692,15 @@ if analyze_button:
                             "LOW": "🟢"
                         }.get(item['priority'], "⚪")
                         
+                        # Truncate action for expander title to avoid UI truncation
+                        action_text = item['action']
+                        action_preview = action_text[:80] + "..." if len(action_text) > 80 else action_text
+                        
                         with st.expander(
-                            f"{priority_emoji} {item['action']} "
-                            f"({item['owner']})",
+                            f"{priority_emoji} {action_preview} ({item['owner']})",
                             expanded=False
                         ):
+                            st.markdown(f"**Action:** {action_text}")
                             st.markdown(f"**Priority:** {item['priority']}")
                             st.markdown(f"**Owner:** {item['owner']}")
                             if item.get('details'):
@@ -794,13 +856,10 @@ if analyze_button:
                         if constraints:
                             context["constraints"] = constraints
                         
-                        # Add provider preference to context
-                        context["preferred_provider"] = selected_provider
-                        
-                        # Display provider info
+                        # Display tiered LLM info
                         st.info(
-                            f"🤖 Using {provider_choice} as primary LLM "
-                            "provider (with automatic failover)"
+                            "🤖 Using Tiered LLM System: Mistral Large (EU) for reasoning, "
+                            "Gemini Flash for synthesis/routing"
                         )
                         
                         # Create the graph
@@ -814,6 +873,14 @@ if analyze_button:
                         
                         # Run the graph
                         result = graph.invoke(initial_state)
+                        
+                        # Update cost tracking from tiered provider
+                        try:
+                            provider = get_tiered_provider()
+                            cost_data = provider.get_cost_summary()
+                            st.session_state.cost_summary = cost_data
+                        except Exception as e:
+                            logger.warning(f"Could not update cost tracking: {e}")
                         
                         # Store in session state for PDF export
                         st.session_state.analysis_results = {
@@ -934,11 +1001,15 @@ if analyze_button:
                                     "Critical": "🔴"
                                 }.get(item['priority'], "⚪")
                                 
+                                # Truncate action for expander title to avoid UI truncation
+                                action_text = item['action']
+                                action_preview = action_text[:80] + "..." if len(action_text) > 80 else action_text
+                                
                                 with st.expander(
-                                    f"{priority_emoji} {item['action']} "
-                                    f"({item['owner']})",
+                                    f"{priority_emoji} {action_preview} ({item['owner']})",
                                     expanded=False
                                 ):
+                                    st.markdown(f"**Action:** {action_text}")
                                     st.markdown(
                                         f"**Priority:** {item['priority']}"
                                     )

@@ -45,10 +45,14 @@ red_lines:
   - "Missing encryption for GDPR-regulated data"
 
 acceptance_criteria:
-  block: "Critical vulnerabilities with known exploits OR exposed secrets OR no incident response for sensitive systems"
-  warn: "Security misconfigurations OR missing hardening OR inadequate monitoring/logging"
-  accept: "Security best practices implemented with defense in depth"
-  endorse: "Zero-trust architecture with automated threat detection and response"
+  block:
+    - "Critical vulnerabilities with known exploits OR exposed secrets OR no incident response for sensitive systems"
+  warn:
+    - "Security misconfigurations OR missing hardening OR inadequate monitoring/logging"
+  accept:
+    - "Security best practices implemented with defense in depth"
+  endorse:
+    - "Zero-trust architecture with automated threat detection and response"
 
 knowledge_domains:
   - "Security Operations (SecOps) and incident response"

@@ -45,10 +45,14 @@ red_lines:
   - "Manipulated consent (pre-checked boxes, confusing language)"
 
 acceptance_criteria:
-  block: "Clear dark patterns OR subscription traps OR critical accessibility violations (WCAG Level A)"
-  warn: "Asymmetric friction OR unclear terms OR accessibility gaps (WCAG Level AA issues)"
-  accept: "Fair treatment with reasonable transparency and accessibility"
-  endorse: "Proactive consumer empowerment with WCAG AAA accessibility"
+  block:
+    - "Clear dark patterns OR subscription traps OR critical accessibility violations (WCAG Level A)"
+  warn:
+    - "Asymmetric friction OR unclear terms OR accessibility gaps (WCAG Level AA issues)"
+  accept:
+    - "Fair treatment with reasonable transparency and accessibility"
+  endorse:
+    - "Proactive consumer empowerment with WCAG AAA accessibility"
 
 knowledge_domains:
   - "EU Consumer Rights Directive (2011/83/EU)"

@@ -43,10 +43,14 @@ red_lines:
   - "Hidden costs not accounted for in TCO"
 
 acceptance_criteria:
-  block: "Cost premium >40% without demonstrable Trust Premium OR negative ROI over 5 years"
-  warn: "Cost premium 25-40% requiring Trust Premium validation"
-  accept: "Cost premium <25% OR justified by Trust Premium calculation"
-  endorse: "Cost-neutral or cost-saving while meeting requirements"
+  block:
+    - "Cost premium >40% without demonstrable Trust Premium OR negative ROI over 5 years"
+  warn:
+    - "Cost premium 25-40% requiring Trust Premium validation"
+  accept:
+    - "Cost premium <25% OR justified by Trust Premium calculation"
+  endorse:
+    - "Cost-neutral or cost-saving while meeting requirements"
 
 knowledge_domains:
   - "Total Cost of Ownership (TCO) analysis"

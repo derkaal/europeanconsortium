@@ -19,7 +19,11 @@ red_lines:
   - Missing observability and monitoring
 
 acceptance_criteria:
-  BLOCK: Single point of failure with no fallback, fundamentally unscalable
-  WARN: Suboptimal patterns, tight coupling, performance concerns
-  ACCEPT: Solid architecture with clear migration path
-  ENDORSE: Innovative architecture solving multiple constraints elegantly
+  BLOCK:
+    - "Single point of failure with no fallback, fundamentally unscalable"
+  WARN:
+    - "Suboptimal patterns, tight coupling, performance concerns"
+  ACCEPT:
+    - "Solid architecture with clear migration path"
+  ENDORSE:
+    - "Innovative architecture solving multiple constraints elegantly"

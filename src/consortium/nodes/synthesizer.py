@@ -60,7 +60,25 @@ def synthesizer_node(state: ConsortiumState) -> Dict[str, Any]:
         "convergence_status": state.get("convergence_status"),
         "iteration_count": state.get("iteration_count", 0)
     }
-    
+
+    # Extract convergence gate information (Feature 2: Convergence Gates)
+    convergence_status = state.get("convergence_status", {})
+    gate_status = convergence_status.get("gate_status")
+
+    waivers_applied = []
+    values_escalation_report = None
+
+    if gate_status:
+        # Extract waivers that were applied
+        waivers_applied = gate_status.get("waivers_applied", [])
+
+        # Check if Philosopher BLOCKs require Values Escalation Report
+        philosopher_blocks = gate_status.get("philosopher_blocks", [])
+        if philosopher_blocks:
+            values_escalation_report = _generate_values_escalation_report(
+                state, philosopher_blocks
+            )
+
     # Assemble final report
     report = {
         "recommendation": recommendation,
@@ -68,6 +86,14 @@ def synthesizer_node(state: ConsortiumState) -> Dict[str, Any]:
         "action_items": action_items,
         "decision_provenance": provenance
     }
+
+    # Add waivers section if any were applied (Feature 2)
+    if waivers_applied:
+        report["waivers_applied"] = waivers_applied
+
+    # Add Values Escalation Report if Philosopher BLOCKs occurred (Feature 2)
+    if values_escalation_report:
+        report["values_escalation_report"] = values_escalation_report
 
     logger.info("✓ Final recommendation synthesized")
 
@@ -196,13 +222,13 @@ def _summarize_consensus(responses: Dict[str, Any]) -> str:
 
 def _extract_action_items(state: ConsortiumState) -> List[Dict[str, Any]]:
     """Extract action items from agent responses."""
-    
+
     items = []
-    
+
     for agent_id, response in state.get("agent_responses", {}).items():
         rating = response.get("rating")
         reasoning = response.get("reasoning", "")
-        
+
         if rating == "WARN":
             mitigation = response.get("mitigation_plan", "")
             items.append({
@@ -222,5 +248,87 @@ def _extract_action_items(state: ConsortiumState) -> List[Dict[str, Any]]:
                 "priority": "Critical",
                 "details": reasoning[:100] + "..."
             })
-    
+
     return items
+
+
+def _generate_values_escalation_report(
+    state: ConsortiumState,
+    philosopher_blocks: List[Dict[str, Any]]
+) -> Dict[str, Any]:
+    """Generate Values Escalation Report for Philosopher BLOCKs.
+
+    When the Philosopher agent BLOCKs, this generates a board-grade report
+    documenting the values violation and requiring explicit waiver to proceed.
+
+    Feature 2: Convergence Gates + Waiver Register
+
+    Args:
+        state: Current consortium state
+        philosopher_blocks: List of Philosopher BLOCK incidents
+
+    Returns:
+        Values Escalation Report dict
+    """
+    agent_responses = state.get("agent_responses", {})
+    philosopher_response = agent_responses.get("philosopher", {})
+
+    # Extract red line violations from Philosopher response
+    red_lines_violated = []
+    for block in philosopher_blocks:
+        red_lines_violated.extend(block.get("red_lines", []))
+
+    report = {
+        "escalation_trigger": "Philosopher BLOCK - Values Violation Detected",
+        "severity": "CRITICAL - Requires Board-Level Review",
+        "values_analysis": philosopher_response.get("reasoning", ""),
+        "red_lines_violated": list(set(red_lines_violated)),  # Deduplicate
+        "philosopher_confidence": philosopher_response.get("confidence", 0),
+        "strategic_implications": _extract_strategic_implications(philosopher_response),
+        "recommendation": (
+            "This strategy proposal conflicts with fundamental organizational values. "
+            "Proceeding requires:\n"
+            "1. Explicit waiver granted by authorized decision-maker\n"
+            "2. Documented mitigation plan\n"
+            "3. Time-bounded review process\n"
+            "4. Clear scope restrictions\n\n"
+            "Without waiver, this proposal MUST NOT proceed."
+        ),
+        "next_steps": [
+            "Escalate to Board or Ethics Committee",
+            "Document business justification for waiver request",
+            "Design mitigation plan addressing values concerns",
+            "Define waiver scope, time bounds, and review schedule"
+        ]
+    }
+
+    return report
+
+
+def _extract_strategic_implications(philosopher_response: Dict[str, Any]) -> str:
+    """Extract strategic implications from Philosopher reasoning.
+
+    Args:
+        philosopher_response: Philosopher agent's response
+
+    Returns:
+        Strategic implications summary
+    """
+    reasoning = philosopher_response.get("reasoning", "")
+
+    # Simple extraction: look for key phrases
+    implications = []
+
+    if "reputation" in reasoning.lower():
+        implications.append("Potential reputational risk")
+    if "trust" in reasoning.lower():
+        implications.append("Erosion of stakeholder trust")
+    if "principle" in reasoning.lower() or "value" in reasoning.lower():
+        implications.append("Violation of core organizational principles")
+    if "precedent" in reasoning.lower():
+        implications.append("Sets dangerous precedent for future decisions")
+
+    if implications:
+        return "; ".join(implications)
+    else:
+        return "Fundamental misalignment with organizational values and ethics"

@@ -1,6 +1,12 @@
 """Convergence test node - checks if agents have converged.
 
-Implements cumulative convergence criteria from PSEUDOCODE.md Section 3.
+Implements cumulative convergence criteria with tier-based gates.
+
+Changes from original:
+- Tier-1 BLOCKs cannot be averaged away (require waiver or redesign)
+- Tier-2 BLOCKs require explicit tradeoff documentation
+- Tier-3 BLOCKs are advisory only
+- Philosopher BLOCKs trigger Values Escalation Report
 """
 
 import logging
@@ -71,25 +77,62 @@ def convergence_test_node(state: ConsortiumState) -> Dict[str, Any]:
             "iteration_count": new_iteration_count
         }
     
-    # Check 1: Zero BLOCK ratings
-    blocks = [
-        aid for aid, r in responses.items()
-        if r.get("rating") == "BLOCK"
-    ]
-    if blocks:
-        logger.info(
-            f"Convergence failed: {len(blocks)} BLOCK ratings "
-            f"(iteration {new_iteration_count}/{MAX_ITERATIONS})"
+    # Check 1: Convergence Gates (Tier-based BLOCK handling)
+    # Load and check convergence gates
+    try:
+        from .convergence_gates import ConvergenceGates, load_convergence_config
+
+        config = load_convergence_config()
+        gates = ConvergenceGates(config)
+
+        can_proceed, gate_status = gates.check_convergence_gates(
+            responses,
+            state.get("context", {})
         )
-        return {
-            "convergence_status": {
-                "converged": False,
-                "reason": f"Blocking concerns from: {', '.join(blocks)}",
-                "blocking_agents": blocks,
+
+        if not can_proceed:
+            logger.info(
+                f"Convergence blocked by gates: {gate_status['gate_decision']} "
+                f"(iteration {new_iteration_count}/{MAX_ITERATIONS})"
+            )
+            return {
+                "convergence_status": {
+                    "converged": False,
+                    "reason": gate_status["message"],
+                    "gate_status": gate_status,
+                    "iteration_count": new_iteration_count
+                },
                 "iteration_count": new_iteration_count
-            },
-            "iteration_count": new_iteration_count
-        }
+            }
+
+        # If gates passed but there were BLOCKs with waivers, include in status
+        if gate_status.get("waivers_applied"):
+            logger.info(
+                f"Convergence gates passed with {len(gate_status['waivers_applied'])} waiver(s) applied"
+            )
+
+    except Exception as e:
+        logger.warning(f"Convergence gates check failed, falling back to legacy logic: {e}")
+        # Fallback to legacy logic
+        blocks = [
+            aid for aid, r in responses.items()
+            if r.get("rating") == "BLOCK"
+        ]
+        if blocks:
+            logger.info(
+                f"Convergence failed: {len(blocks)} BLOCK ratings "
+                f"(iteration {new_iteration_count}/{MAX_ITERATIONS})"
+            )
+            return {
+                "convergence_status": {
+                    "converged": False,
+                    "reason": f"Blocking concerns from: {', '.join(blocks)}",
+                    "blocking_agents": blocks,
+                    "iteration_count": new_iteration_count
+                },
+                "iteration_count": new_iteration_count
+            }
+        gate_status = None  # No gate status if using legacy logic
     
     # Check 2: Max 2 WARN ratings
     warns = [
@@ -169,16 +212,22 @@ def convergence_test_node(state: ConsortiumState) -> Dict[str, Any]:
         f"(confidence: {avg_confidence_pct:.1f}%, "
         f"agreement: {positive_pct:.0f}%)"
     )
-    
+
+    convergence_status = {
+        "converged": True,
+        "reason": "All convergence criteria met",
+        "avg_confidence": avg_confidence_pct,
+        "positive_percentage": positive_pct,
+        "positive_ratings": len(positive),
+        "warn_ratings": len(warns),
+        "iteration_count": new_iteration_count
+    }
+
+    # Include gate status if available
+    if gate_status:
+        convergence_status["gate_status"] = gate_status
+
     return {
-        "convergence_status": {
-            "converged": True,
-            "reason": "All convergence criteria met",
-            "avg_confidence": avg_confidence_pct,
-            "positive_percentage": positive_pct,
-            "positive_ratings": len(positive),
-            "warn_ratings": len(warns),
-            "iteration_count": new_iteration_count
-        },
+        "convergence_status": convergence_status,
         "iteration_count": new_iteration_count
     }

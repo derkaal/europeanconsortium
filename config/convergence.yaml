@@ -1,0 +1,107 @@
+# Convergence Gates & Waiver Configuration
+# Controls how agent BLOCKs are handled based on agent tier
+
+convergence:
+  # Agent tiering - determines how BLOCKs are resolved
+  agent_tiers:
+    tier1:
+      agents: ["sovereign", "jurist", "intelligence_sovereign"]
+      block_resolution: "REDESIGN_OR_WAIVER"
+      description: "Regulatory and sovereignty - cannot be traded off"
+      rationale: |
+        Tier-1 agents guard non-compensatory constraints:
+        - Sovereign: Data sovereignty, vendor lock-in
+        - Jurist: Legal compliance, regulatory exposure
+        - Intelligence Sovereign: AI sovereignty, strategic dependency
+
+        These cannot be "averaged away" - a GDPR violation is not acceptable
+        even if 11 other agents endorse the proposal.
+
+    tier2:
+      agents: ["economist", "architect", "ecosystem"]
+      block_resolution: "REDESIGN_OR_EXPLICIT_TRADEOFF"
+      description: "Operational constraints - can be traded with documentation"
+      rationale: |
+        Tier-2 agents represent important but tradeable concerns:
+        - Economist: Financial viability, cost constraints
+        - Architect: Technical feasibility, complexity
+        - Ecosystem: Sustainability, carbon impact
+
+        These CAN be traded off with explicit documentation of the tradeoff
+        and stakeholder acceptance.
+
+    tier3:
+      agents: ["ethnographer", "technologist", "consumer_voice", "founder", "alchemist"]
+      block_resolution: "DOCUMENT_AND_PROCEED"
+      description: "Advisory perspectives - inform but don't veto"
+      rationale: |
+        Tier-3 agents provide valuable input but don't have veto power:
+        - Ethnographer: Cultural fit, user experience
+        - Technologist: Operational security (CISO perspective)
+        - Consumer Voice: Consumer protection, accessibility
+        - Founder: Feature opportunities
+        - Alchemist: Regulatory advantage
+
+        BLOCKs are documented and included in recommendations but don't
+        prevent convergence.
+
+    # Special tier: Values escalation
+    values_escalation:
+      agents: ["philosopher"]
+      block_resolution: "ESCALATE_VALUES_REPORT"
+      description: "Ethical/value conflict requires explicit escalation report"
+      rationale: |
+        Philosopher BLOCK indicates fundamental ethical concern:
+        - Bias, discrimination, fairness issues
+        - Dark patterns, manipulation
+        - Rights violations
+
+        Cannot proceed without:
+        1. Values Escalation Report in output
+        2. Explicit waiver to proceed despite ethical concern
+        3. Documentation of values tradeoff accepted
+
+  # Non-compensatory red lines (structured IDs)
+  non_compensatory_red_lines:
+    - id: "GDPR_VIOLATION"
+      description: "Clear GDPR violation with >€10M penalty exposure"
+      tier: 1
+      agent: "jurist"
+
+    - id: "AI_ACT_HIGH_RISK_NO_ASSESSMENT"
+      description: "High-Risk AI system without conformity assessment pathway"
+      tier: 1
+      agent: "jurist"
+
+    - id: "DATA_SUBJECT_TO_FOREIGN_LAW"
+      description: "Data flows subject to non-EU intelligence laws (CLOUD Act, etc.)"
+      tier: 1
+      agent: "sovereign"
+
+    - id: "STRATEGIC_AI_SINGLE_FOREIGN_PROVIDER"
+      description: "Critical AI dependency on single foreign provider without exit strategy"
+      tier: 1
+      agent: "intelligence_sovereign"
+
+    - id: "NO_EXIT_STRATEGY"
+      description: "Vendor lock-in with >50% migration cost, no viable exit path"
+      tier: 1
+      agent: "sovereign"
+
+    - id: "DATA_RESIDENCY_VIOLATION"
+      description: "EU data stored outside EU jurisdiction without adequate safeguards"
+      tier: 1
+      agent: "sovereign"
+
+  # Convergence criteria (existing)
+  warn_limit: 2
+  confidence_threshold: 0.70
+  agreement_threshold: 0.60
+  max_iterations: 3
+
+  # Waiver settings
+  waivers:
+    persist_path: "data/waivers"
+    require_review_date: true
+    max_validity_days: 180
+    auto_expire: true

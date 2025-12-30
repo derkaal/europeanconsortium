@@ -43,10 +43,14 @@ red_lines:
   - "Proprietary reasoning patterns exposed through prompt engineering on foreign models"
 
 acceptance_criteria:
-  block: "Strategic intelligence sent to foreign AI OR fine-tuning lock-in >€50K without exit strategy"
-  warn: "Foreign AI for sensitive use cases without safeguards OR single provider dependency"
-  accept: "Hybrid architectures with clear sovereignty boundaries OR commodity AI with sanitization"
-  endorse: "European AI providers OR open-weight models with sovereign deployment"
+  block:
+    - "Strategic intelligence sent to foreign AI OR fine-tuning lock-in >€50K without exit strategy"
+  warn:
+    - "Foreign AI for sensitive use cases without safeguards OR single provider dependency"
+  accept:
+    - "Hybrid architectures with clear sovereignty boundaries OR commodity AI with sanitization"
+  endorse:
+    - "European AI providers OR open-weight models with sovereign deployment"
 
 knowledge_domains:
   - "European AI Providers (Mistral AI, Aleph Alpha, AI Sweden)"

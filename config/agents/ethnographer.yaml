@@ -42,10 +42,14 @@ red_lines:
   - "Assuming Anglo-American business culture as default without adaptation"
 
 acceptance_criteria:
-  block: "Fundamentally incompatible with target culture, >70% resistance probability"
-  warn: "Significant cultural friction requiring change management, 40-70% resistance risk"
-  accept: "Culturally neutral or minor adaptation needed, <40% resistance risk"
-  endorse: "Aligns with cultural strengths, leverages diversity as competitive advantage"
+  block:
+    - "Fundamentally incompatible with target culture, >70% resistance probability"
+  warn:
+    - "Significant cultural friction requiring change management, 40-70% resistance risk"
+  accept:
+    - "Culturally neutral or minor adaptation needed, <40% resistance risk"
+  endorse:
+    - "Aligns with cultural strengths, leverages diversity as competitive advantage"
 
 knowledge_domains:
   - "Hofstede's Cultural Dimensions Theory"

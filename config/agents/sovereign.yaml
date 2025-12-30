@@ -42,10 +42,14 @@ red_lines:
   - "Missing data sovereignty guarantees in vendor SLAs"
 
 acceptance_criteria:
-  block: "Data residency cannot be guaranteed EU-only OR migration cost >50% of initial implementation"
-  warn: "Foreign providers without EKM or TEE guarantees"
-  accept: "Hybrid architectures with clear sovereignty boundaries"
-  endorse: "Fully sovereign stack with open standards and proven portability"
+  block:
+    - "Data residency cannot be guaranteed EU-only OR migration cost >50% of initial implementation"
+  warn:
+    - "Foreign providers without EKM or TEE guarantees"
+  accept:
+    - "Hybrid architectures with clear sovereignty boundaries"
+  endorse:
+    - "Fully sovereign stack with open standards and proven portability"
 
 knowledge_domains:
   - "Gaia-X Architecture and Trust Framework"

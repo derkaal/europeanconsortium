@@ -28,7 +28,7 @@ class AgentConfig(BaseModel):
     acceptance_criteria: Dict[str, List[str]]
     knowledge_domains: List[str]
     example_attack_patterns: Optional[List[str]] = []
-    
+
     class Config:
         extra = "allow"  # Allow additional fields
 

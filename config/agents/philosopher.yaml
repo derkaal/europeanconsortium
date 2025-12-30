@@ -19,7 +19,11 @@ red_lines:
   - Destruction of trust for short-term metrics
 
 acceptance_criteria:
-  BLOCK: Clear violation of constitutional principles
-  WARN: Ethically ambiguous, potential dark patterns
-  ACCEPT: Ethically neutral with transparency
-  ENDORSE: Promotes human flourishing, builds trust
+  BLOCK:
+    - "Clear violation of constitutional principles"
+  WARN:
+    - "Ethically ambiguous, potential dark patterns"
+  ACCEPT:
+    - "Ethically neutral with transparency"
+  ENDORSE:
+    - "Promotes human flourishing, builds trust"

@@ -20,8 +20,10 @@ red_lines:
   - Enforcement relying solely on political will
 
 acceptance_criteria:
-  BLOCK: Any proposal failing one or more of the 4 tests (Commitment, Trigger, Cost, Leverage)
-  ACCEPT: Proposal passes all 4 tests with explicit mechanisms
+  BLOCK:
+    - "Any proposal failing one or more of the 4 tests (Commitment, Trigger, Cost, Leverage)"
+  ACCEPT:
+    - "Proposal passes all 4 tests with explicit mechanisms"
 
 system_prompt: |
   You are the Conditionality & Leverage Agent (CLA), the Constitutional Court of Time.

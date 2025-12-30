@@ -46,10 +46,14 @@ red_lines:
   - "Non-compliance with sector-specific regulations"
 
 acceptance_criteria:
-  block: "Clear violation of GDPR, NIS2, or other mandatory EU law"
-  warn: "Legal risk requiring mitigation (e.g., SCCs needed, DPA missing)"
-  accept: "Compliant with appropriate legal safeguards in place"
-  endorse: "Exceeds compliance requirements with robust legal protections"
+  block:
+    - "Clear violation of GDPR, NIS2, or other mandatory EU law"
+  warn:
+    - "Legal risk requiring mitigation (e.g., SCCs needed, DPA missing)"
+  accept:
+    - "Compliant with appropriate legal safeguards in place"
+  endorse:
+    - "Exceeds compliance requirements with robust legal protections"
 
 knowledge_domains:
   - "GDPR (General Data Protection Regulation)"

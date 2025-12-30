@@ -19,7 +19,7 @@ from .nodes import (
 )
 
 
-def create_consortium_graph(search_tool=None, enable_scout: bool = False):
+def create_consortium_graph(search_tool=None, enable_scout: bool = True):
     """Create the main consortium graph with optional Scout and CLA gate.
 
     The Scout runs BEFORE routing to gather current intelligence for agents.

@@ -25,7 +25,7 @@ class AgentConfig(BaseModel):
     mandate: str
     system_prompt: str
     red_lines: List[str]
-    acceptance_criteria: Dict[str, str]
+    acceptance_criteria: Dict[str, List[str]]
     knowledge_domains: List[str]
     example_attack_patterns: Optional[List[str]] = []
     

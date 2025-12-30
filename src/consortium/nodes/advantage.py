@@ -58,8 +58,12 @@ def advantage_analysis_node(state: ConsortiumState) -> Dict[str, Any]:
     proposal = state.get("query", "")
     context = state.get("context", {})
 
-    # Get agent responses
-    agent_responses = state.get("agent_responses", [])
+    # Get agent responses (convert dict to list of response values)
+    agent_responses_dict = state.get("agent_responses", {})
+    if isinstance(agent_responses_dict, dict):
+        agent_responses = list(agent_responses_dict.values())
+    else:
+        agent_responses = []
 
     # Analyze advantages
     analysis = agent.analyze(

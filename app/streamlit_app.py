@@ -115,8 +115,8 @@ with st.sidebar:
 
     st.subheader("Enabled Agents")
 
-    # Big Three
-    st.markdown("**Big Three (Foundational)**")
+    # Tier 0 - Foundational
+    st.markdown("**Tier 0: Foundational Agents (Big Three + AI Sovereignty)**")
     sovereign_enabled = st.checkbox(
         "🛡️ Sovereign (Data Sovereignty)", value=True
     )
@@ -131,7 +131,7 @@ with st.sidebar:
     )
 
     # Tier 1
-    st.markdown("**Tier 1 (Technical & Values)**")
+    st.markdown("**Tier 1: Technical & Values**")
     architect_enabled = st.checkbox(
         "🏗️ Architect (Systems Design)", value=True
     )
@@ -142,8 +142,8 @@ with st.sidebar:
         "🧠 Philosopher (Ethics)", value=True
     )
 
-    # Tier 4
-    st.markdown("**Tier 4 (Specialized)**")
+    # Tier 2
+    st.markdown("**Tier 2: Specialized Agents**")
     ethnographer_enabled = st.checkbox(
         "🌍 Ethnographer (Cultural Fit)", value=True
     )
@@ -154,8 +154,8 @@ with st.sidebar:
         "👥 Consumer Voice (User Protection)", value=True
     )
 
-    # Feature Subsidy Agents
-    st.markdown("**Feature Subsidy Agents**")
+    # Tier 3 - Feature Subsidy Agents
+    st.markdown("**Tier 3: Feature Subsidy Agents**")
     alchemist_enabled = st.checkbox(
         "💎 Alchemist (Regulation-to-Value)",
         value=True,
@@ -167,8 +167,8 @@ with st.sidebar:
         help="Hunts Feature Subsidies and regulatory arbitrage opportunities"
     )
 
-    # Meta
-    st.markdown("**Meta-Agent**")
+    # Meta-Agent
+    st.markdown("**Meta-Agent (Special Purpose)**")
     cla_enabled = st.checkbox(
         "🧟 CLA (Zombie Detection)",
         value=False,

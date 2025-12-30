@@ -6,10 +6,10 @@
 
 model_tiers:
   reasoning:
-    description: "Complex analysis, adversarial debate - EU SOVEREIGN FIRST"
+    description: "Complex analysis, adversarial debate - EU SOVEREIGN FIRST (using Small for speed)"
     primary:
       provider: mistral
-      model: mistral-large-latest
+      model: mistral-small-latest
       max_tokens: 4096
       temperature: 0.7
     fallback_1:

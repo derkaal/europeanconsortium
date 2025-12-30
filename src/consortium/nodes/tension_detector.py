@@ -1,4 +1,8 @@
-"""Tension detector node - identifies tensions between agent responses."""
+"""Tension detector node - identifies tensions between agent responses.
+
+COST OPTIMIZATION: ZERO-LLM tier (Rule-based = FREE)
+Uses Python logic to detect conflicts - no API calls needed.
+"""
 
 import logging
 from typing import Dict, Any

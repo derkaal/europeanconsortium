@@ -30,6 +30,8 @@ def agent_executor_node(state: Dict[str, Any]) -> Dict[str, Any]:
         from agents.ethnographer import EthnographerAgent
         from agents.technologist import TechnologistAgent
         from agents.consumer_voice import ConsumerVoiceAgent
+        from agents.founder import FounderAgent
+        from agents.alchemist import AlchemistAgent
         from src.consortium.config import ConfigLoader
         from src.consortium.memory import get_memory_manager
     except ImportError as e:
@@ -109,21 +111,24 @@ def agent_executor_node(state: Dict[str, Any]) -> Dict[str, Any]:
     state["memory_retrievals"] = memory_retrievals
     state["retrieval_metadata"] = retrieval_metadata
 
-    # Registry of all available agents (10 total across all tiers)
+    # Registry of all available agents (12 total across all tiers)
     available_agents = {
-        # Big Three
+        # Big Three (Foundational)
         "sovereign": SovereignAgent,
         "intelligence_sovereign": IntelligenceSovereignAgent,
         "economist": EconomistAgent,
         "jurist": JuristAgent,
-        # Tier 1
+        # Tier 1 (Technical & Values)
         "architect": ArchitectAgent,
         "ecosystem": EcosystemAgent,
         "philosopher": PhilosopherAgent,
-        # Tier 4
+        # Tier 4 (Specialized)
         "ethnographer": EthnographerAgent,
         "technologist": TechnologistAgent,
         "consumer_voice": ConsumerVoiceAgent,
+        # Value Creation (NEW)
+        "founder": FounderAgent,
+        "alchemist": AlchemistAgent,
     }
     
     agent_responses = {}

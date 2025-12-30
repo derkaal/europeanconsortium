@@ -103,10 +103,16 @@ class Agent(ABC):
         self._llm_provider = None
     
     def _get_llm_provider(self):
-        """Get LLM provider instance (lazy initialization)."""
+        """Get tiered LLM provider instance (lazy initialization).
+
+        All agents use the REASONING tier which prioritizes:
+        1. Mistral Large (EU Sovereign) - Primary
+        2. Claude Sonnet - Fallback 1
+        3. GPT-4o - Fallback 2
+        """
         if self._llm_provider is None:
-            from src.consortium.llm_provider import get_llm_provider
-            self._llm_provider = get_llm_provider()
+            from src.consortium.tiered_llm_provider import get_tiered_provider
+            self._llm_provider = get_tiered_provider()
         return self._llm_provider
     
     def _invoke_llm(self, state: Dict[str, Any]) -> str:
@@ -148,15 +154,15 @@ class Agent(ABC):
             # Get LLM provider
             provider = self._get_llm_provider()
             
-            # Invoke with timing
+            # Invoke with timing using REASONING tier (EU-first: Mistral Large)
             start_time = time.time()
-            
+
             response = provider.invoke(
-                system_prompt=self.system_prompt,
-                user_message=user_message,
-                agent_id=self.agent_id
+                prompt=user_message,
+                task=f"agent_{self.agent_id}",  # Maps to REASONING tier
+                system_prompt=self.system_prompt
             )
-            
+
             latency_ms = (time.time() - start_time) * 1000
             
             logger.info(

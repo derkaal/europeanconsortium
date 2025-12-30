@@ -977,7 +977,7 @@ if analyze_button:
                         
                         cols = st.columns(3)
                         for i, (agent_id, response) in enumerate(
-                            result["agent_responses"].items()
+                            result.get("agent_responses", {}).items()
                         ):
                             with cols[i % 3]:
                                 color = rating_colors.get(

@@ -39,6 +39,9 @@ class ConsortiumState(TypedDict, total=False):
         memory_retrievals: Similar historical cases retrieved before agent execution
         case_id: ID of stored case (for feedback/outcome updates)
         retrieval_metadata: Metadata about memory retrieval (quality, cold-start status)
+        research_briefing: Scout research briefing with current intelligence
+        scout_completed: Whether Scout research completed successfully
+        scout_error: Error message if Scout failed
     """
     query: str
     context: Dict[str, Any]
@@ -56,6 +59,10 @@ class ConsortiumState(TypedDict, total=False):
     memory_retrievals: List[Dict[str, Any]]  # Similar historical cases
     case_id: Optional[str]  # ID of stored case for feedback
     retrieval_metadata: Optional[Dict[str, Any]]  # Retrieval quality info
+    # Scout research fields
+    research_briefing: Optional[Dict[str, Any]]  # Scout research briefing
+    scout_completed: bool  # Whether Scout completed successfully
+    scout_error: Optional[str]  # Scout error message if failed
 
 
 def create_initial_state(
@@ -84,5 +91,8 @@ def create_initial_state(
         cla_gate_status="PENDING",
         memory_retrievals=[],
         case_id=None,
-        retrieval_metadata=None
+        retrieval_metadata=None,
+        research_briefing=None,
+        scout_completed=False,
+        scout_error=None
     )

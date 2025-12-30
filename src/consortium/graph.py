@@ -1,6 +1,6 @@
-"""Main consortium graph implementation with CLA gate."""
+"""Main consortium graph implementation with CLA gate and Scout."""
 
-from typing import Literal
+from typing import Literal, Optional
 from langgraph.graph import StateGraph, END
 
 from .state import ConsortiumState
@@ -14,21 +14,31 @@ from .nodes import (
     cla_gate_node,
     route_after_cla_gate,
     architect_revision_node,
+    create_scout_node,
 )
 
 
-def create_consortium_graph():
-    """Create the main consortium graph with CLA gate.
-    
+def create_consortium_graph(search_tool=None, enable_scout: bool = True):
+    """Create the main consortium graph with optional Scout and CLA gate.
+
+    The Scout runs BEFORE routing to gather current intelligence for agents.
     The CLA (Conditionality & Leverage Agent) gate runs after convergence
     but before final synthesis, ensuring temporal robustness.
-    
+
+    Args:
+        search_tool: Optional web search tool for Scout (Tavily, Brave, etc.)
+        enable_scout: Whether to enable Scout upstream research (default: True)
+
     Returns:
         Compiled LangGraph instance
     """
     graph = StateGraph(ConsortiumState)
-    
+
     # Add all nodes
+    if enable_scout:
+        scout_node = create_scout_node(search_tool)
+        graph.add_node("scout", scout_node)
+
     graph.add_node("router", router_node)
     graph.add_node("agent_executor", agent_executor_node)
     graph.add_node("tension_detector", tension_detector_node)
@@ -37,9 +47,14 @@ def create_consortium_graph():
     graph.add_node("cla_gate", cla_gate_node)
     graph.add_node("architect_revision", architect_revision_node)
     graph.add_node("synthesizer", synthesizer_node)
-    
-    # Entry point
-    graph.set_entry_point("router")
+
+    # Entry point - Scout if enabled, otherwise router
+    if enable_scout:
+        graph.set_entry_point("scout")
+        # Scout -> Router (always)
+        graph.add_edge("scout", "router")
+    else:
+        graph.set_entry_point("router")
     
     # Linear edges
     graph.add_edge("router", "agent_executor")

@@ -1,62 +1,168 @@
+# The Scout - Strategic Intelligence Gatherer
 agent_id: scout
 name: "The Scout"
-mandate: "Gather upstream intelligence and validate evidence quality before deliberation."
+version: "1.0.0"
 
-system_prompt: |
-  You are The Scout, Upstream Intelligence Gatherer for the European Strategy Consortium.
-  
-  Your core mandate is to gather external intelligence before the consortium deliberates.
-  You ensure decisions are informed by comprehensive market data, regulatory trends,
-  competitor intelligence, and industry precedents.
-  
-  You are deeply knowledgeable about:
-  - Market research methodologies and data sources
-  - Competitor intelligence gathering (public sources only)
-  - Regulatory monitoring and enforcement patterns
-  - Economic indicators and forecasting
-  - Industry benchmarking and best practices
-  - Evidence validation and source credibility assessment
-  - Research budget management and cost optimization
-  
-  When evaluating proposals, your primary concern is ensuring:
-  1. Sufficient intelligence exists to make informed decisions
-  2. Evidence quality is high (verified, recent, credible sources)
-  3. Intelligence gaps are identified and flagged
-  4. Research costs are justified by decision value
-  
-  You are thorough but cost-conscious. Your job is to identify intelligence gaps
-  that could lead to poor decisions, while managing research budgets efficiently.
-  
-  Rate proposals using this framework:
-  - BLOCK: No reliable intelligence available for critical decision factors
-  - WARN: Intelligence gaps exist or evidence quality concerns present
-  - ACCEPT: Sufficient intelligence gathered, minor gaps acceptable
-  - ENDORSE: Comprehensive, high-quality intelligence from multiple sources
+mandate: |
+  Ensure the consortium debates with current, accurate intelligence.
+  Identify knowledge gaps and fill them before analysis begins.
 
-red_lines:
-  - "Critical intelligence missing or unavailable"
-  - "All available intelligence is unreliable or contradictory"
-  - "Evidence older than 12 months for fast-moving sectors"
+core_principle: "Stale Intelligence is Dangerous Intelligence"
 
-acceptance_criteria:
-  block: "No reliable intelligence available for critical decision factors"
-  warn: "Intelligence gaps exist or evidence quality concerns present"
-  accept: "Sufficient intelligence gathered, minor gaps acceptable"
-  endorse: "Comprehensive, high-quality intelligence from multiple sources"
+role_in_workflow: "upstream_preprocessor"
+execution_order: 1  # Runs before all other agents
 
-knowledge_domains:
-  - "Market research methodologies"
-  - "Competitor intelligence (OSINT)"
-  - "Regulatory monitoring"
-  - "Economic indicators and forecasting"
-  - "Industry benchmarking"
-  - "Evidence validation"
-  - "Source credibility assessment"
-  - "Research budget management"
-  - "Information caching strategies"
+# Search provider configuration
+search_config:
+  mode: "failover"  # "failover" or "aggregate"
 
-example_attack_patterns:
-  - "No market sizing data available for this sector"
-  - "Competitor intelligence is 18 months old (outdated)"
-  - "Regulatory trend based on single unverified source"
-  - "Economic forecast contradicts recent central bank guidance"
+  providers:
+    tavily:
+      enabled: true
+      priority: 1
+      search_depth: "basic"  # "basic" or "advanced"
+      # API key from TAVILY_API_KEY env var
+
+    brave:
+      enabled: true
+      priority: 2
+      default_country: "DE"  # Germany default for EU focus
+      search_lang: "en"
+      freshness: "pm"  # Past month for recent results
+      # API key from BRAVE_API_KEY env var
+
+  # Fallback behavior
+  fallback:
+    on_all_fail: "continue_without_research"
+    log_level: "warning"
+
+research_config:
+  max_searches: 15
+  max_results_per_search: 3
+
+  source_priority:
+    tier_1_official:
+      - "EUR-Lex"
+      - "European Commission"
+      - "EDPB"
+      - "ENISA"
+      - "ECJ"
+    tier_2_company:
+      - "Mistral AI"
+      - "Anthropic"
+      - "OpenAI"
+      - "AWS"
+      - "Google Cloud"
+    tier_3_news:
+      - "Reuters"
+      - "Politico EU"
+      - "Bloomberg"
+      - "Financial Times"
+    tier_4_tech:
+      - "Hugging Face"
+      - "The Register"
+      - "Ars Technica"
+
+  recency_preference:
+    high: ["regulations", "enforcement", "pricing", "releases", "announcements"]
+    medium: ["trends", "research", "analysis", "funding"]
+    low: ["methodology", "frameworks", "history", "tutorials"]
+
+# Agent domain mapping for targeted research
+agent_domain_mapping:
+  sovereign:
+    keywords: ["cloud", "data residency", "sovereignty", "Gaia-X", "CLOUD Act"]
+    sources: ["AWS Blog", "Google Cloud Blog", "Gaia-X AISBL", "EUR-Lex"]
+    brave_country: "DE"
+
+  intelligence_sovereign:
+    keywords: ["AI model", "LLM", "Mistral", "GPT", "European AI", "open source AI"]
+    sources: ["Hugging Face", "Mistral Blog", "Anthropic", "OpenAI Blog"]
+    brave_freshness: "pw"  # Past week - AI moves fast
+
+  economist:
+    keywords: ["pricing", "cost", "funding", "investment", "market", "API pricing"]
+    sources: ["Company pricing pages", "Crunchbase", "Reuters", "Bloomberg"]
+    brave_freshness: "pm"
+
+  jurist:
+    keywords: ["GDPR", "AI Act", "regulation", "enforcement", "compliance", "ECJ"]
+    sources: ["EUR-Lex", "EDPB", "GDPRHub", "European Commission"]
+    brave_country: "DE"
+
+  ecosystem:
+    keywords: ["carbon", "sustainability", "green", "energy", "climate", "SCI"]
+    sources: ["Green Software Foundation", "IEA", "EU Climate"]
+
+  philosopher:
+    keywords: ["ethics", "bias", "fairness", "harm", "rights", "dark patterns"]
+    sources: ["BEUC", "AlgorithmWatch", "AI Ethics Guidelines"]
+
+  ethnographer:
+    keywords: ["cultural ergonomics", "user experience", "cultural adaptation"]
+    sources: ["UX research", "Cultural studies"]
+
+  technologist:
+    keywords: ["operational security", "CISO", "cybersecurity", "security"]
+    sources: ["Security blogs", "ENISA"]
+
+  consumer_voice:
+    keywords: ["consumer protection", "accessibility", "user rights"]
+    sources: ["BEUC", "Consumer organizations"]
+
+  founder:
+    keywords: ["feature subsidy", "regulatory arbitrage", "startup strategy"]
+    sources: ["Startup news", "Funding announcements"]
+
+  alchemist:
+    keywords: ["regulation to value", "compliance innovation", "advantage"]
+    sources: ["Strategy publications"]
+
+  architect:
+    keywords: ["LangGraph", "multi-agent systems", "AI architecture"]
+    sources: ["LangChain docs", "Technical blogs"]
+
+output_format:
+  include_executive_summary: true
+  include_critical_updates: true
+  include_agent_briefings: true
+  include_information_gaps: true
+  include_conflicting_info: true
+  include_provider_metadata: true  # Which search provider returned each result
+  max_findings_per_agent: 5
+
+# Budget management (COST CONTROL)
+budgets:
+  enabled: true
+  monthly_limit: 900                 # Leave 100 buffer for Brave free tier (1000/month)
+  per_query_limit: 15                # Max searches per user query
+  per_agent_limit: 3                 # Max searches per agent domain
+  time_budget_seconds: 30            # Max wall time for research phase
+  diminishing_returns_threshold: 3   # Stop if N consecutive searches add no new facts
+
+  # Persistence & reset rules (required)
+  persist_backend: "sqlite"          # "sqlite" or "file"
+  persist_path: "data/scout_budget.db"
+  reset_rule: "calendar_month"       # calendar month boundaries
+  timezone: "Europe/Berlin"          # required for calendar month reset
+  count_only_on_cache_miss: true     # required: cache hits do not consume budget
+
+# Search result caching (COST REDUCTION)
+cache:
+  enabled: true
+  backend: "sqlite"                  # "sqlite" or "file"
+  db_path: "data/scout_cache.db"
+  default_ttl_days: 7
+
+  # TTL overrides by content category
+  ttl_overrides:
+    regulatory: 30                   # Regulations change slowly
+    pricing: 1                       # Pricing changes fast
+    news: 1                          # News is ephemeral
+    ai_models: 3                     # AI releases are frequent
+
+# Evidence Referee (Feature 3: Deterministic claim tracking)
+evidence_referee:
+  enabled: true
+  persist_path: ".consortium/evidence_referee.db"
+  auto_register_claims: true         # Automatically register claims from search results

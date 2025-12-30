@@ -12,8 +12,9 @@ def agent_executor_node(state: Dict[str, Any]) -> Dict[str, Any]:
 
     Process:
     1. Retrieve similar historical cases from memory (if available)
-    2. Execute all triggered agents in parallel with historical context
-    3. Return agent responses and memory metadata
+    2. Inject Scout research briefing into agent contexts
+    3. Execute all triggered agents in parallel with historical context and research
+    4. Return agent responses and memory metadata
     """
 
     if '.' not in sys.path:
@@ -34,6 +35,7 @@ def agent_executor_node(state: Dict[str, Any]) -> Dict[str, Any]:
         from agents.alchemist import AlchemistAgent
         from src.consortium.config import ConfigLoader
         from src.consortium.memory import get_memory_manager
+        from src.consortium.nodes.scout_node import inject_briefing_into_agent_context
     except ImportError as e:
         logger.error(f"Import failed: {e}")
         return {
@@ -48,6 +50,9 @@ def agent_executor_node(state: Dict[str, Any]) -> Dict[str, Any]:
         }
 
     config_manager = ConfigLoader()
+
+    # Get Scout research briefing if available
+    research_briefing = state.get("research_briefing")
 
     # =========================================================================
     # MEMORY RETRIEVAL - Retrieve similar historical cases before agent execution
@@ -146,20 +151,30 @@ def agent_executor_node(state: Dict[str, Any]) -> Dict[str, Any]:
         if agent_id not in available_agents:
             logger.warning(f"Agent '{agent_id}' not in registry, skipping")
             continue
-        
+
         try:
             agent_config = config_manager.load_agent_config(agent_id)
-            
+
             if hasattr(agent_config, 'model_dump'):
                 agent_config = agent_config.model_dump()
             elif hasattr(agent_config, 'dict'):
                 agent_config = agent_config.dict()
-            
+
             agent_class = available_agents[agent_id]
             agent = agent_class(agent_config)
-            
+
+            # Inject Scout research briefing into agent's state
+            enhanced_state = state.copy()
+            if research_briefing:
+                base_context = state.get("context", {})
+                enhanced_context = inject_briefing_into_agent_context(
+                    agent_id, base_context, research_briefing
+                )
+                enhanced_state["context"] = enhanced_context
+                logger.info(f"Injected Scout research briefing into {agent_id} context")
+
             logger.info(f"Invoking {agent_id}...")
-            response = agent.invoke(state)
+            response = agent.invoke(enhanced_state)
             
             # Handle both AgentResponse objects and dict responses
             if not isinstance(response, dict):

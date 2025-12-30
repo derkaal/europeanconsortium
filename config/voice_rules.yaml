@@ -1,0 +1,104 @@
+# Voice Rules Configuration
+# Feature 4: Final Recommendation Voice (board-grade)
+#
+# Enforces board-ready professional communication standards
+
+voice_rules:
+  enabled: true  # Apply voice rules to final recommendations
+
+  # Board-readiness requirements
+  board_grade:
+    min_score: 75  # Minimum score (0-100) for board-readiness
+    require_action_verbs: true
+    prohibit_hedging: true
+    minimize_passive_voice: true
+
+  # Hedging words to remove (weak language)
+  hedging_words:
+    - "maybe"
+    - "perhaps"
+    - "possibly"
+    - "might"
+    - "could be"
+    - "seems like"
+    - "appears to"
+    - "sort of"
+    - "kind of"
+    - "somewhat"
+    - "fairly"
+    - "relatively"
+    - "quite"
+    - "rather"
+    - "probably"
+    - "likely"
+    - "potentially"
+    - "arguably"
+
+  # Weak to strong phrase transformations
+  strengthen_phrases:
+    "we suggest": "We recommend"
+    "you might want to": "You must"
+    "you could": "You should"
+    "you should consider": "You must"
+    "it would be good to": "You must"
+    "it may be beneficial": "It is essential"
+    "this could help": "This will"
+    "this might work": "This will work"
+    "we think": "We conclude"
+    "we feel": "We determine"
+    "in our view": "Our analysis shows"
+    "our opinion is": "Our recommendation is"
+    "we believe": "We determine"
+
+  # Required action verbs (directive language)
+  action_verbs:
+    - "implement"
+    - "deploy"
+    - "establish"
+    - "execute"
+    - "launch"
+    - "adopt"
+    - "enforce"
+    - "mandate"
+    - "require"
+    - "ensure"
+    - "verify"
+    - "validate"
+    - "eliminate"
+    - "terminate"
+    - "cease"
+    - "discontinue"
+    - "prioritize"
+    - "accelerate"
+    - "optimize"
+    - "streamline"
+    - "consolidate"
+    - "standardize"
+    - "resolve"
+    - "address"
+    - "mitigate"
+
+  # Recommendation formatting
+  recommendation_format:
+    use_bold_headers: true
+    capitalize_priority: true  # HIGH, CRITICAL vs high, critical
+    include_confidence: true
+    include_analysis_basis: true
+
+  # Action items formatting
+  action_items:
+    prepend_verb_if_missing: true
+    capitalize_priority: true
+    owner_required: true
+
+  # Validation thresholds
+  validation:
+    max_hedging_words: 0
+    min_action_verbs: 2
+    max_passive_voice_ratio: 0.3  # Max 30% passive voice
+    max_weak_phrases: 0
+
+  # Output preferences
+  output:
+    log_transformations: true  # Log what was changed
+    include_readiness_score: false  # Include score in final report (for debugging)

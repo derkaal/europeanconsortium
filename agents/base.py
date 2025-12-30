@@ -385,14 +385,21 @@ class Agent(ABC):
         
         # Response format instructions
         if compact:
-            # Compact: Minimal format instructions
+            # Compact: Clear but concise format instructions
             prompt_parts.append(
-                "\n## Response Format:\n"
-                "RATING: [BLOCK|WARN|ACCEPT|ENDORSE]\n"
-                "CONFIDENCE: [0.0-1.0]\n"
-                "REASONING: [Detailed analysis with evidence]\n"
-                "ATTACK_VECTOR: [If BLOCK/WARN: specific risk]\n"
-                "MITIGATION_PLAN: [If WARN: how to fix]"
+                "\n## Your Response (REQUIRED FORMAT):\n"
+                "You MUST respond in this exact format:\n\n"
+                "RATING: [Choose one: BLOCK | WARN | ACCEPT | ENDORSE]\n"
+                "CONFIDENCE: [Number from 0.0 to 1.0]\n"
+                "REASONING: [Your detailed analysis citing specific evidence]\n"
+                "ATTACK_VECTOR: [Required if BLOCK/WARN - describe the specific risk]\n"
+                "MITIGATION_PLAN: [Required if WARN - propose how to fix the issue]\n\n"
+                "Example:\n"
+                "RATING: WARN\n"
+                "CONFIDENCE: 0.8\n"
+                "REASONING: The proposal uses AWS which subjects EU data to US CLOUD Act...\n"
+                "ATTACK_VECTOR: Non-EU intelligence agencies could subpoena customer data\n"
+                "MITIGATION_PLAN: Implement External Key Management (EKM) with EU-only key storage"
             )
         else:
             # Full: Detailed format with examples

@@ -9,6 +9,7 @@ from .search import (
     SearchToolFactory,
     NoOpSearchTool,
 )
+from .cost_tracker import CostTracker, get_cost_tracker, MODEL_PRICING
 
 __all__ = [
     "SearchProvider",
@@ -18,4 +19,7 @@ __all__ = [
     "MultiProviderSearchTool",
     "SearchToolFactory",
     "NoOpSearchTool",
+    "CostTracker",
+    "get_cost_tracker",
+    "MODEL_PRICING",
 ]

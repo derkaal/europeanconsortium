@@ -208,7 +208,8 @@ class Agent(ABC):
         query_context: Dict[str, Any],
         proposal: Optional[Dict[str, Any]] = None,
         memory_cases: Optional[List[Dict[str, Any]]] = None,
-        iteration: int = 1
+        iteration: int = 1,
+        compact: bool = True  # NEW: Enable compact mode by default
     ) -> str:
         """
         Construct complete prompt with all relevant context.
@@ -234,93 +235,137 @@ class Agent(ABC):
             Complete prompt string ready for LLM invocation
         """
         prompt_parts = []
-        
-        # Header: Agent role and identity
-        prompt_parts.append(f"# {self.name}")
-        prompt_parts.append(f"\n{self.system_prompt}\n")
-        
-        # Core mandate
-        prompt_parts.append("## Your Mandate")
-        prompt_parts.append(self.mandate)
+
+        if compact:
+            # COMPACT MODE: Reduced tokens (~50-60% reduction)
+            # Combine header and mandate in one line
+            prompt_parts.append(f"# {self.name} - {self.mandate}")
+        else:
+            # FULL MODE: Original verbose format
+            prompt_parts.append(f"# {self.name}")
+            prompt_parts.append(f"\n{self.system_prompt}\n")
+            prompt_parts.append("## Your Mandate")
+            prompt_parts.append(self.mandate)
         
         # Non-negotiable red lines
         if self.red_lines:
-            prompt_parts.append("\n## Non-Negotiable Red Lines")
-            prompt_parts.append("You must BLOCK any proposal that violates these constraints:")
-            for red_line in self.red_lines:
-                prompt_parts.append(f"- {red_line}")
-        
+            if compact:
+                # Compact: Just list red lines
+                prompt_parts.append("\n## Red Lines (BLOCK if violated):")
+                for red_line in self.red_lines[:3]:  # Limit to top 3 in compact mode
+                    prompt_parts.append(f"• {red_line}")
+            else:
+                # Full: Include explanation
+                prompt_parts.append("\n## Non-Negotiable Red Lines")
+                prompt_parts.append("You must BLOCK any proposal that violates these constraints:")
+                for red_line in self.red_lines:
+                    prompt_parts.append(f"- {red_line}")
+
         # Acceptance criteria
-        prompt_parts.append("\n## Rating Framework")
-        prompt_parts.append("Use this framework to rate proposals:")
-        for rating, criteria in self.acceptance_criteria.items():
-            prompt_parts.append(f"- **{rating.upper()}**: {criteria}")
+        if compact:
+            # Compact: Only show BLOCK and ACCEPT criteria (most critical)
+            prompt_parts.append("\n## Rating:")
+            block_criteria = self.acceptance_criteria.get('block') or self.acceptance_criteria.get('BLOCK', [])
+            accept_criteria = self.acceptance_criteria.get('accept') or self.acceptance_criteria.get('ACCEPT', [])
+            if block_criteria:
+                first_block = block_criteria[0] if isinstance(block_criteria, list) else block_criteria
+                prompt_parts.append(f"BLOCK if: {first_block}")
+            if accept_criteria:
+                first_accept = accept_criteria[0] if isinstance(accept_criteria, list) else accept_criteria
+                prompt_parts.append(f"ACCEPT if: {first_accept}")
+        else:
+            # Full: Show all rating levels
+            prompt_parts.append("\n## Rating Framework")
+            prompt_parts.append("Use this framework to rate proposals:")
+            for rating, criteria in self.acceptance_criteria.items():
+                prompt_parts.append(f"- **{rating.upper()}**: {criteria}")
         
         # Historical precedents (if available)
         if memory_cases and len(memory_cases) > 0:
-            prompt_parts.append("\n## Historical Precedents")
-            prompt_parts.append(
-                "The following similar cases from the consortium's memory may inform your analysis. "
-                "Learn from successful approaches and past failures:"
-            )
-            for i, case in enumerate(memory_cases[:3], 1):
-                case_id = case.get('id', 'unknown')[:12]  # First 12 chars of ID
-                similarity = case.get('similarity_score', 0.0)
-                enhanced_score = case.get('enhanced_score', similarity)
-                boost_reason = case.get('boost_reason', 'N/A')
-                metadata = case.get('metadata', {})
+            if compact:
+                # COMPACT: Show only 1-2 most relevant cases with minimal details
+                prompt_parts.append("\n## Past Cases:")
+                for i, case in enumerate(memory_cases[:2], 1):  # Max 2 cases in compact mode
+                    similarity = case.get('similarity_score', 0.0)
+                    metadata = case.get('metadata', {})
+                    outcome_status = metadata.get('outcome_status', 'not_implemented')
 
-                # Extract case details from metadata
-                quality_score = metadata.get('quality_score', 0.0)
-                outcome_status = metadata.get('outcome_status', 'not_implemented')
-                alignment_score = metadata.get('alignment_score', 0.0)
-                agents_engaged = metadata.get('agents_engaged', '[]')
+                    # Ultra-compact format: outcome + similarity + query
+                    outcome_icon = {"implemented": "✅", "abandoned": "❌", "in_progress": "🔄"}.get(outcome_status, "⏸️")
+                    query_short = case.get('query', 'N/A')[:80] + "..." if len(case.get('query', '')) > 80 else case.get('query', 'N/A')
+                    prompt_parts.append(f"{i}. {outcome_icon} (sim:{similarity:.0%}) {query_short}")
+            else:
+                # FULL: Detailed case information
+                prompt_parts.append("\n## Historical Precedents")
+                prompt_parts.append(
+                    "The following similar cases from the consortium's memory may inform your analysis. "
+                    "Learn from successful approaches and past failures:"
+                )
+                for i, case in enumerate(memory_cases[:3], 1):
+                    case_id = case.get('id', 'unknown')[:12]
+                    similarity = case.get('similarity_score', 0.0)
+                    enhanced_score = case.get('enhanced_score', similarity)
+                    boost_reason = case.get('boost_reason', 'N/A')
+                    metadata = case.get('metadata', {})
 
-                # Format outcome status
-                outcome_display = {
-                    "implemented": "✅ IMPLEMENTED",
-                    "in_progress": "🔄 IN PROGRESS",
-                    "abandoned": "❌ ABANDONED",
-                    "not_implemented": "⏸️ NOT IMPLEMENTED"
-                }.get(outcome_status, outcome_status.upper())
+                    quality_score = metadata.get('quality_score', 0.0)
+                    outcome_status = metadata.get('outcome_status', 'not_implemented')
+                    alignment_score = metadata.get('alignment_score', 0.0)
+                    agents_engaged = metadata.get('agents_engaged', '[]')
 
-                prompt_parts.append(f"\n### Case {i}: {case_id}... (Similarity: {similarity:.2f})")
-                prompt_parts.append(f"**Query**: {case.get('query', 'N/A')}")
-                prompt_parts.append(f"**Outcome**: {outcome_display}")
+                    outcome_display = {
+                        "implemented": "✅ IMPLEMENTED",
+                        "in_progress": "🔄 IN PROGRESS",
+                        "abandoned": "❌ ABANDONED",
+                        "not_implemented": "⏸️ NOT IMPLEMENTED"
+                    }.get(outcome_status, outcome_status.upper())
 
-                # Add quality and alignment scores if available
-                if quality_score > 0:
-                    prompt_parts.append(f"**User Rating**: {quality_score:.1f}/5.0")
+                    prompt_parts.append(f"\n### Case {i}: {case_id}... (Similarity: {similarity:.2f})")
+                    prompt_parts.append(f"**Query**: {case.get('query', 'N/A')}")
+                    prompt_parts.append(f"**Outcome**: {outcome_display}")
 
-                if outcome_status == "implemented" and alignment_score > 0:
-                    prompt_parts.append(f"**Alignment Score**: {alignment_score:.1f}/5.0 (how well did it work?)")
+                    if quality_score > 0:
+                        prompt_parts.append(f"**User Rating**: {quality_score:.1f}/5.0")
 
-                # Note if outcome-based boosting was applied
-                if "verified" in boost_reason:
-                    prompt_parts.append(f"**Note**: {boost_reason.replace('_', ' ').title()} (weighted higher in retrieval)")
+                    if outcome_status == "implemented" and alignment_score > 0:
+                        prompt_parts.append(f"**Alignment Score**: {alignment_score:.1f}/5.0 (how well did it work?)")
 
-                # Extract and display agents from JSON string
-                try:
-                    import json
-                    agents_list = json.loads(agents_engaged) if isinstance(agents_engaged, str) else agents_engaged
-                    if self.agent_id in agents_list:
-                        prompt_parts.append(f"**Your Previous Engagement**: You ({self.name}) participated in this case.")
-                except:
-                    pass
+                    if "verified" in boost_reason:
+                        prompt_parts.append(f"**Note**: {boost_reason.replace('_', ' ').title()} (weighted higher in retrieval)")
+
+                    try:
+                        import json
+                        agents_list = json.loads(agents_engaged) if isinstance(agents_engaged, str) else agents_engaged
+                        if self.agent_id in agents_list:
+                            prompt_parts.append(f"**Your Previous Engagement**: You ({self.name}) participated in this case.")
+                    except:
+                        pass
         else:
             # Cold-start message
-            prompt_parts.append("\n## Historical Precedents")
-            prompt_parts.append("**No similar historical cases found.** This appears to be a novel query for the consortium.")
+            if not compact:
+                prompt_parts.append("\n## Historical Precedents")
+                prompt_parts.append("**No similar historical cases found.** This appears to be a novel query for the consortium.")
         
         # Current query context
-        prompt_parts.append("\n## Current Query")
-        prompt_parts.append(f"**Query**: {query}")
-        
-        if query_context:
-            prompt_parts.append("\n**Context**:")
-            for key, value in query_context.items():
-                if value:  # Only include non-empty values
-                    prompt_parts.append(f"- {key.replace('_', ' ').title()}: {value}")
+        if compact:
+            # Compact: Single line query + key context
+            context_items = []
+            if query_context:
+                for key, value in query_context.items():
+                    if value and key in ['industry', 'company_size', 'target_markets']:  # Only critical fields
+                        context_items.append(f"{key}={value}")
+            context_str = f" ({', '.join(context_items)})" if context_items else ""
+            prompt_parts.append(f"\n## Query:{context_str}\n{query}")
+        else:
+            # Full: Separate sections
+            prompt_parts.append("\n## Current Query")
+            prompt_parts.append(f"**Query**: {query}")
+
+            if query_context:
+                prompt_parts.append("\n**Context**:")
+                for key, value in query_context.items():
+                    if value:
+                        prompt_parts.append(f"- {key.replace('_', ' ').title()}: {value}")
         
         # Proposal under review (if in debate/iteration phase)
         if proposal:
@@ -339,24 +384,36 @@ class Agent(ABC):
                 )
         
         # Response format instructions
-        prompt_parts.append("\n## Your Response")
-        prompt_parts.append(
-            "Provide your assessment in this exact format:\n"
-            "\n"
-            "RATING: [BLOCK | WARN | ACCEPT | ENDORSE]\n"
-            "CONFIDENCE: [0.0-1.0]\n"
-            "REASONING: [Your detailed analysis from your specialized perspective]\n"
-            "ATTACK_VECTOR: [If BLOCK/WARN, identify the specific vulnerability or risk]\n"
-            "EVIDENCE: [Cite specific regulations, data, or domain knowledge that supports your position]\n"
-            "MITIGATION_PLAN: [If WARN, propose specific actions to address your concerns]\n"
-            "\n"
-            "**Critical Instructions**:\n"
-            "- Be specific and cite concrete evidence from your knowledge domains\n"
-            "- If you identify problems, propose solutions when possible\n"
-            "- Your job is to find issues others miss, but also to help solve them\n"
-            "- Provide confidence level honestly - uncertainty is valuable information\n"
-            "- Reference your non-negotiable red lines when they apply"
-        )
+        if compact:
+            # Compact: Minimal format instructions
+            prompt_parts.append(
+                "\n## Response Format:\n"
+                "RATING: [BLOCK|WARN|ACCEPT|ENDORSE]\n"
+                "CONFIDENCE: [0.0-1.0]\n"
+                "REASONING: [Detailed analysis with evidence]\n"
+                "ATTACK_VECTOR: [If BLOCK/WARN: specific risk]\n"
+                "MITIGATION_PLAN: [If WARN: how to fix]"
+            )
+        else:
+            # Full: Detailed format with examples
+            prompt_parts.append("\n## Your Response")
+            prompt_parts.append(
+                "Provide your assessment in this exact format:\n"
+                "\n"
+                "RATING: [BLOCK | WARN | ACCEPT | ENDORSE]\n"
+                "CONFIDENCE: [0.0-1.0]\n"
+                "REASONING: [Your detailed analysis from your specialized perspective]\n"
+                "ATTACK_VECTOR: [If BLOCK/WARN, identify the specific vulnerability or risk]\n"
+                "EVIDENCE: [Cite specific regulations, data, or domain knowledge that supports your position]\n"
+                "MITIGATION_PLAN: [If WARN, propose specific actions to address your concerns]\n"
+                "\n"
+                "**Critical Instructions**:\n"
+                "- Be specific and cite concrete evidence from your knowledge domains\n"
+                "- If you identify problems, propose solutions when possible\n"
+                "- Your job is to find issues others miss, but also to help solve them\n"
+                "- Provide confidence level honestly - uncertainty is valuable information\n"
+                "- Reference your non-negotiable red lines when they apply"
+            )
         
         return "\n".join(prompt_parts)
     

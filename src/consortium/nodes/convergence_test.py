@@ -64,6 +64,18 @@ def convergence_test_node(state: ConsortiumState) -> Dict[str, Any]:
         logger.warning(
             f"⚠ FORCED CONVERGENCE after {new_iteration_count} iterations"
         )
+        # Calculate avg_confidence even for forced convergence
+        confidences = [r.get("confidence", 0.0) for r in responses.values()]
+        avg_confidence = sum(confidences) / len(confidences) if confidences else 0
+        avg_confidence_pct = avg_confidence * 100
+
+        # Calculate positive percentage
+        positive = [
+            aid for aid, r in responses.items()
+            if r.get("rating") in ["ACCEPT", "ENDORSE"]
+        ]
+        positive_pct = (len(positive) / len(responses)) * 100 if responses else 0
+
         return {
             "convergence_status": {
                 "converged": True,
@@ -72,6 +84,8 @@ def convergence_test_node(state: ConsortiumState) -> Dict[str, Any]:
                     f"iterations (max: {MAX_ITERATIONS})"
                 ),
                 "forced": True,
+                "avg_confidence": avg_confidence_pct,
+                "positive_percentage": positive_pct,
                 "iteration_count": new_iteration_count
             },
             "iteration_count": new_iteration_count

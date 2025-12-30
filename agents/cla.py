@@ -223,7 +223,7 @@ class CLAAgent(Agent):
             "mechanism_patch": mechanism_patch,
             "reasoning": response_text,
             "rating": "BLOCK" if verdict != "STRUCTURALLY_CREDIBLE" else "ACCEPT",
-            "confidence": 95 if failed_tests else 85
+            "confidence": 0.95 if failed_tests else 0.85  # Fixed: was 95/85, now 0.95/0.85
         }
     
     def __repr__(self) -> str:

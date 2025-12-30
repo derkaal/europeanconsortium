@@ -61,10 +61,18 @@ class ScoutAgent:
 
         Args:
             search_tool: Web search tool (e.g., Tavily, SerpAPI)
+                        If None, auto-configures from environment (TAVILY_API_KEY or BRAVE_API_KEY)
             config: Optional configuration overrides
         """
         self.agent_id = "scout"
         self.name = "The Scout"
+        
+        # Auto-configure search tool if not provided
+        if search_tool is None:
+            from src.consortium.tools.search import SearchToolFactory
+            search_tool = SearchToolFactory.create()
+            logger.info("Scout auto-configured search tool from environment")
+        
         self.search_tool = search_tool
         self.config = config or {}
         self.max_searches = self.config.get("max_searches", 15)

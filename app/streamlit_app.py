@@ -1018,9 +1018,9 @@ if analyze_button:
                         
                         # Final recommendation
                         st.header("📊 Final Recommendation")
-                        
-                        conv = result['convergence_status']
-                        if conv['converged']:
+
+                        conv = result.get('convergence_status', {})
+                        if conv.get('converged', False):
                             st.success("**Rating: CONVERGED**")
                         else:
                             st.warning("**Rating: ESCALATED TO HUMAN**")
@@ -1032,11 +1032,14 @@ if analyze_button:
                             f"{positive_pct:.0f}%"
                         )
                         st.metric("Iterations", result.get('iteration_count', 1))
-                        
+
                         st.subheader("Pyramid Principle Summary")
-                        
-                        rec = result['final_recommendation']
-                        st.markdown(rec['recommendation'])
+
+                        rec = result.get('final_recommendation', {})
+                        if rec.get('recommendation'):
+                            st.markdown(rec['recommendation'])
+                        else:
+                            st.warning("No recommendation generated.")
                         
                         if rec.get('action_items'):
                             st.subheader('"Yes, If" Conditions')

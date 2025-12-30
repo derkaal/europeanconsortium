@@ -1,0 +1,76 @@
+# Founder ↔ Alchemist Tension Protocol
+protocol_id: founder_alchemist
+name: "Revenue vs Brand Tension"
+description: |
+  The Founder wants to capture Feature Subsidies as immediate revenue.
+  The Alchemist wants to build long-term brand premium from compliance.
+  Both are valid - the question is resource allocation.
+
+trigger_conditions:
+  - Founder prioritizes short-term Feature Revenue
+  - Alchemist prioritizes long-term Brand Investment
+  - Resource constraint forces choice between them
+
+resolution_procedure:
+  1: "Founder quantifies Feature Revenue potential (€/year)"
+  2: "Alchemist quantifies Brand Premium potential (€/year + moat value)"
+  3: "Calculate: Is this a 'Revenue First' or 'Brand First' opportunity?"
+  4: "If Feature Revenue > 3x Brand Investment: Founder approach"
+  5: "If Brand Premium creates 5+ year moat: Alchemist approach"
+  6: "If both significant: Hybrid (capture revenue, reinvest in brand)"
+
+max_iterations: 2
+
+escalation_trigger: |
+  Cannot agree on resource allocation between
+  immediate Feature capture vs long-term Brand building
+
+synergy_note: |
+  These agents should usually AGREE because their approaches stack:
+  - Founder captures Feature Subsidy → Revenue
+  - Alchemist converts compliance → Brand Premium
+  - Combined: Revenue + Brand = Compound Advantage
+
+  Tension only arises when resources are constrained.
+
+resolution_outputs:
+  revenue_first:
+    description: "Prioritize immediate Feature Subsidy capture"
+    conditions:
+      - "Feature Revenue exceeds 3x brand investment cost"
+      - "Market window is closing (18-24 months)"
+      - "Cash flow needs are immediate"
+
+  brand_first:
+    description: "Prioritize long-term brand and moat building"
+    conditions:
+      - "Brand premium creates sustainable moat (5+ years)"
+      - "Trust capital compounds over time"
+      - "Regulatory arbitrage window is long-term"
+
+  hybrid_strategy:
+    description: "Capture Feature Revenue and reinvest in Brand"
+    conditions:
+      - "Both opportunities are significant"
+      - "Revenue can fund brand investment"
+      - "Feature and Brand are complementary"
+    recommended: true
+
+example_scenarios:
+  scenario_1:
+    context: "CSRD compliance for supply chain SaaS"
+    founder_view: "Sell Scope 3 validation as Feature (€2M/year revenue)"
+    alchemist_view: "Build 'CSRD-Native' brand positioning (10-15% premium)"
+    resolution: "HYBRID - Capture CSRD revenue, use to fund brand marketing as 'First CSRD-Native Platform'"
+
+  scenario_2:
+    context: "AI Act transparency requirements"
+    founder_view: "Sell 'Explainable AI as a Service' to incumbents (€5M/year)"
+    alchemist_view: "Build 'AI Governance Platform' brand (market creation)"
+    resolution: "HYBRID - Revenue from service funds platform development and branding"
+
+  scenario_3:
+    context: "Limited funding, must choose between carbon credits or GDPR premium"
+    founder_view: "Carbon credits are €80/ton immediate revenue"
+    alchemist_view: "GDPR brand creates 20% premium long-term"
+    resolution: "REVENUE FIRST - Carbon credits fund operations, then invest in GDPR branding"

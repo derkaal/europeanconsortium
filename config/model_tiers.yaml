@@ -103,6 +103,9 @@ task_routing:
   agent_ethnographer: reasoning
   agent_technologist: reasoning
   agent_consumer_voice: reasoning
+  # Value Creation agents (NEW - Feature Subsidy Philosophy)
+  agent_founder: reasoning
+  agent_alchemist: reasoning
 
   # Standard tier (cheapest: Gemini Flash)
   synthesizer: standard

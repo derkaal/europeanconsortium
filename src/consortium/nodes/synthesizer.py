@@ -270,18 +270,14 @@ def _extract_action_items(state: ConsortiumState) -> List[Dict[str, Any]]:
                 "action": f"Resolve {agent_id} concerns",
                 "owner": "Strategy Team",
                 "priority": "HIGH",
-                "details": (
-                    mitigation[:100] + "..."
-                    if len(mitigation) > 100
-                    else mitigation or reasoning[:100] + "..."
-                )
+                "details": mitigation or reasoning
             })
         elif rating == "BLOCK":
             items.append({
                 "action": f"CRITICAL: Resolve {agent_id} blocking constraints",
                 "owner": "Executive Team",
                 "priority": "CRITICAL",
-                "details": reasoning[:100] + "..."
+                "details": reasoning
             })
 
     # Apply voice rules to action items (Feature 4)

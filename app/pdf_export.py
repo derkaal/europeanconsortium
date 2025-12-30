@@ -229,33 +229,87 @@ def generate_consortium_pdf(
     if isinstance(final_recommendation, dict):
         rec_text = final_recommendation.get('recommendation', 'N/A')
         story.append(Paragraph(rec_text, body_style))
-        story.append(Spacer(1, 0.2*inch))
-        
-        # Action items ("Yes, If" conditions)
+        story.append(Spacer(1, 0.3*inch))
+
+        # Generate cohesive written report from action items
         if final_recommendation.get('action_items'):
-            story.append(Paragraph('"Yes, If" Conditions', subheading_style))
+            story.append(Paragraph('Detailed Analysis & Recommendations', subheading_style))
             story.append(Spacer(1, 0.1*inch))
-            
-            for item in final_recommendation['action_items']:
-                priority = item.get('priority', 'MEDIUM')
-                action = item.get('action', 'N/A')
-                owner = item.get('owner', 'N/A')
-                details = item.get('details', '')
-                
-                priority_emoji = {
-                    "HIGH": "🔴",
-                    "MEDIUM": "🟡",
-                    "LOW": "🟢",
-                    "Critical": "🔴"
-                }.get(priority, "⚪")
-                
+
+            # Group items by priority
+            critical_items = [
+                item for item in final_recommendation['action_items']
+                if item.get('priority') == 'CRITICAL'
+            ]
+            high_items = [
+                item for item in final_recommendation['action_items']
+                if item.get('priority') == 'HIGH'
+            ]
+            other_items = [
+                item for item in final_recommendation['action_items']
+                if item.get('priority') not in ['CRITICAL', 'HIGH']
+            ]
+
+            # Write cohesive narrative for critical items
+            if critical_items:
                 story.append(Paragraph(
-                    f"{priority_emoji} <b>{action}</b> ({owner})",
+                    '<b>Critical Requirements</b>',
                     body_style
                 ))
-                if details:
-                    story.append(Paragraph(f"<i>{details}</i>", body_style))
+                story.append(Spacer(1, 0.05*inch))
+
+                intro = (
+                    "The following critical concerns must be addressed before proceeding. "
+                    "These represent fundamental blockers that require executive-level attention "
+                    "and resolution:"
+                )
+                story.append(Paragraph(intro, body_style))
                 story.append(Spacer(1, 0.1*inch))
+
+                for item in critical_items:
+                    details = item.get('details', '')
+                    # Extract agent name from action
+                    action = item.get('action', '')
+                    story.append(Paragraph(f"<b>{action}:</b> {details}", body_style))
+                    story.append(Spacer(1, 0.1*inch))
+
+            # Write cohesive narrative for high priority items
+            if high_items:
+                story.append(Spacer(1, 0.1*inch))
+                story.append(Paragraph(
+                    '<b>High Priority Recommendations</b>',
+                    body_style
+                ))
+                story.append(Spacer(1, 0.05*inch))
+
+                intro = (
+                    "The following areas require significant attention and mitigation strategies. "
+                    "While not blocking, these concerns should be addressed by the strategy team "
+                    "to ensure successful implementation:"
+                )
+                story.append(Paragraph(intro, body_style))
+                story.append(Spacer(1, 0.1*inch))
+
+                for item in high_items:
+                    details = item.get('details', '')
+                    action = item.get('action', '')
+                    story.append(Paragraph(f"<b>{action}:</b> {details}", body_style))
+                    story.append(Spacer(1, 0.1*inch))
+
+            # Write cohesive narrative for other items
+            if other_items:
+                story.append(Spacer(1, 0.1*inch))
+                story.append(Paragraph(
+                    '<b>Additional Considerations</b>',
+                    body_style
+                ))
+                story.append(Spacer(1, 0.05*inch))
+
+                for item in other_items:
+                    details = item.get('details', '')
+                    action = item.get('action', '')
+                    story.append(Paragraph(f"<b>{action}:</b> {details}", body_style))
+                    story.append(Spacer(1, 0.1*inch))
     else:
         story.append(Paragraph(str(final_recommendation), body_style))
     

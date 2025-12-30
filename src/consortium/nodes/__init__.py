@@ -9,6 +9,7 @@ from .synthesizer import synthesizer_node
 from .cla_gate import cla_gate_node, route_after_cla_gate
 from .architect_revision import architect_revision_node
 from .scout_node import create_scout_node, inject_briefing_into_agent_context
+from .advantage import advantage_analysis_node
 
 __all__ = [
     "router_node",
@@ -22,4 +23,5 @@ __all__ = [
     "architect_revision_node",
     "create_scout_node",
     "inject_briefing_into_agent_context",
+    "advantage_analysis_node",
 ]

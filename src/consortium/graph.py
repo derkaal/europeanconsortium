@@ -15,6 +15,7 @@ from .nodes import (
     route_after_cla_gate,
     architect_revision_node,
     create_scout_node,
+    advantage_analysis_node,
 )
 
 
@@ -46,6 +47,7 @@ def create_consortium_graph(search_tool=None, enable_scout: bool = True):
     graph.add_node("convergence_test", convergence_test_node)
     graph.add_node("cla_gate", cla_gate_node)
     graph.add_node("architect_revision", architect_revision_node)
+    graph.add_node("advantage_analysis", advantage_analysis_node)
     graph.add_node("synthesizer", synthesizer_node)
 
     # Entry point - Scout if enabled, otherwise router
@@ -109,9 +111,12 @@ def create_consortium_graph(search_tool=None, enable_scout: bool = True):
         route_after_cla_gate
     )
     
-    # After architect revision, go to synthesis
-    graph.add_edge("architect_revision", "synthesizer")
-    
+    # After architect revision, run advantage analysis (Feature 6)
+    graph.add_edge("architect_revision", "advantage_analysis")
+
+    # After advantage analysis, go to synthesis
+    graph.add_edge("advantage_analysis", "synthesizer")
+
     graph.add_edge("synthesizer", END)
     
     return graph.compile()

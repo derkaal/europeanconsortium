@@ -1,0 +1,94 @@
+# Competitive Advantage Agent (Feature 6)
+agent_id: advantage
+name: "Competitive Advantage Analyzer"
+version: "1.0.0"
+
+mandate: |
+  Transform regulatory constraints into competitive advantages.
+  "One firm's regulation is another firm's moat."
+
+core_principle: "Constraints Enable Differentiation"
+
+role_in_workflow: "post_convergence_analysis"
+execution_order: 99  # Runs after convergence, before final synthesis
+
+# Agent configuration
+enabled: true
+min_keyword_matches: 1  # Minimum keyword matches to trigger pattern
+
+# Advantage pattern domains
+domains:
+  - GDPR
+  - AI Act
+  - Carbon
+  - Consumer Protection
+  - Data Sovereignty
+  - Transparency
+
+# Advantage types (prioritized)
+advantage_types:
+  market:
+    priority: 1
+    description: "Direct revenue impact through market positioning"
+  brand:
+    priority: 2
+    description: "Long-term value through brand differentiation"
+  technical:
+    priority: 3
+    description: "Product differentiation through technical capabilities"
+  operational:
+    priority: 4
+    description: "Internal efficiency and service offerings"
+
+# Pattern matching settings
+pattern_matching:
+  case_sensitive: false
+  partial_match: true
+  min_relevance_score: 0.5
+
+# Output settings
+output:
+  max_advantages: 10
+  max_opportunities: 3
+  max_recommendations: 5
+  include_evidence_keywords: true
+  include_relevance_scores: true
+
+# Examples of advantage transformations
+examples:
+  - constraint: "GDPR requires data residency in EU"
+    advantage: "Position as 'European Data Haven' - trustworthy alternative"
+    type: "Brand"
+
+  - constraint: "AI Act requires explainability for high-risk systems"
+    advantage: "Lead with 'Explainable AI' - transparency as competitive edge"
+    type: "Technical"
+
+  - constraint: "Carbon reporting mandate under CSRD"
+    advantage: "Position as 'Green Tech Leader' - climate-conscious alternative"
+    type: "Brand"
+
+  - constraint: "Dark patterns prohibition"
+    advantage: "Lead with 'Ethical UX' - user-first design"
+    type: "Brand"
+
+  - constraint: "Data sovereignty concerns with CLOUD Act"
+    advantage: "Target 'Sovereignty-Sensitive' sectors - government, defense"
+    type: "Market"
+
+# Integration with other agents
+integration:
+  consumes_from:
+    - jurist        # Legal/regulatory constraints
+    - ecosystem     # Carbon/sustainability constraints
+    - philosopher   # Ethical/fairness constraints
+
+  provides_to:
+    - synthesizer   # Final recommendation enhancement
+    - alchemist     # Regulatory arbitrage opportunities
+
+# Reporting format
+reporting:
+  include_in_synthesis: true
+  section_title: "Competitive Advantages from Constraints"
+  format: "structured"  # structured or narrative

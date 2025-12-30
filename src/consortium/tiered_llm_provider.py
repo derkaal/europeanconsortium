@@ -141,7 +141,7 @@ class TieredLLMProvider:
             "model_tiers": {
                 "reasoning": {
                     "primary": {"provider": "mistral", "model": "mistral-large-latest", "max_tokens": 4096, "temperature": 0.7},
-                    "fallback_1": {"provider": "anthropic", "model": "claude-3-5-sonnet-20241022", "max_tokens": 4096, "temperature": 0.7},
+                    "fallback_1": {"provider": "anthropic", "model": "claude-sonnet-4-20250514", "max_tokens": 4096, "temperature": 0.7},
                     "fallback_2": {"provider": "openai", "model": "gpt-4o", "max_tokens": 4096, "temperature": 0.7},
                     "cost_per_1m_tokens": {"input": 2.0, "output": 6.0},
                     "currency": "EUR"

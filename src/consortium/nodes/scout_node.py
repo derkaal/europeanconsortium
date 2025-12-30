@@ -20,10 +20,11 @@ def create_scout_node(search_tool=None):
     """
     # Import here to avoid circular dependencies
     from agents.scout import ScoutAgent
+    import asyncio
 
     scout = ScoutAgent(search_tool=search_tool)
 
-    async def scout_node(state: Dict[str, Any]) -> Dict[str, Any]:
+    def scout_node(state: Dict[str, Any]) -> Dict[str, Any]:
         """
         Execute scout research and add briefing to state.
 
@@ -39,7 +40,13 @@ def create_scout_node(search_tool=None):
         logger.info("Scout node executing research...")
 
         try:
-            briefing = await scout.research(query, context)
+            # Run async research in sync context
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                briefing = loop.run_until_complete(scout.research(query, context))
+            finally:
+                loop.close()
 
             logger.info(f"Scout completed: {briefing.searches_executed} searches, "
                        f"{len(briefing.critical_updates)} critical updates")

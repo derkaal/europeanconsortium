@@ -25,10 +25,10 @@ class AgentConfig(BaseModel):
     mandate: str
     system_prompt: str
     red_lines: List[str]
-    acceptance_criteria: Dict[str, str]
+    acceptance_criteria: Dict[str, Any]  # Changed from Dict[str, str] to Dict[str, Any] to support both strings and lists
     knowledge_domains: List[str]
     example_attack_patterns: Optional[List[str]] = []
-    
+
     class Config:
         extra = "allow"  # Allow additional fields
 

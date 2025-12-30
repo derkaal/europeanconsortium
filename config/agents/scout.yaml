@@ -160,3 +160,9 @@ cache:
     pricing: 1                       # Pricing changes fast
     news: 1                          # News is ephemeral
     ai_models: 3                     # AI releases are frequent
+
+# Evidence Referee (Feature 3: Deterministic claim tracking)
+evidence_referee:
+  enabled: true
+  persist_path: ".consortium/evidence_referee.db"
+  auto_register_claims: true         # Automatically register claims from search results

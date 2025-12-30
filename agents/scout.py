@@ -72,6 +72,7 @@ class ScoutAgent:
         # Initialize budget manager and cache (if enabled)
         self.budget_manager = None
         self.search_cache = None
+        self.evidence_referee = None
 
         budget_config = self.config.get("budgets", {})
         if budget_config.get("enabled", False):
@@ -94,6 +95,15 @@ class ScoutAgent:
                 db_path=cache_config.get("db_path", "data/scout_cache.db")
             )
             logger.info("✓ Scout search cache initialized")
+
+        # Initialize Evidence Referee (Feature 3)
+        evidence_config = self.config.get("evidence_referee", {})
+        if evidence_config.get("enabled", False):
+            from src.consortium.tools.evidence_referee import EvidenceReferee
+            self.evidence_referee = EvidenceReferee(
+                persist_path=evidence_config.get("persist_path", ".consortium/evidence_referee.db")
+            )
+            logger.info("✓ Evidence Referee initialized")
 
         # Agent domains for targeted research
         self.agent_domains = {
@@ -476,8 +486,19 @@ Only include agents relevant to this query."""
                         "snippet": result.get("snippet", ""),
                         "url": result.get("url", ""),
                         "date": result.get("date"),
-                        "source": result.get("source", "Web")
+                        "source": result.get("source", "Web"),
+                        "source_type": result.get("source_type", "unknown")
                     })
+
+                # Register claims with Evidence Referee (Feature 3)
+                if self.evidence_referee:
+                    try:
+                        self.evidence_referee.register_claims_from_search_results(
+                            results[:3],  # Same top 3 results
+                            agent_id=plan["agent_id"]
+                        )
+                    except Exception as e:
+                        logger.warning(f"Failed to register claims with Evidence Referee: {e}")
 
             except Exception as e:
                 logger.error(f"Search failed for '{plan['query']}': {e}")

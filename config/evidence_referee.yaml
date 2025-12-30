@@ -1,0 +1,146 @@
+# Evidence Referee Configuration
+# Feature 3: Evidence Referee (deterministic)
+#
+# Deterministic claim tracking, evidence grading, and conflict detection
+
+evidence_referee:
+  # Database persistence
+  persist_path: ".consortium/evidence_referee.db"
+
+  # Structured fields to extract claims from
+  # These are the ONLY fields used for claim extraction (deterministic)
+  extraction_fields:
+    search_results:
+      - title          # Page title
+      - snippet        # Search result snippet
+      - description    # Meta description
+
+    documents:
+      - headline       # Document headline
+      - summary        # Executive summary
+      - conclusion     # Conclusion section
+
+    agent_responses:
+      - key_finding    # Structured key findings field
+      - data_point     # Structured data points field
+      # NOTE: NOT "reasoning" - free text excluded for v1
+
+  # Source type to evidence grade mapping (deterministic)
+  evidence_grading:
+    primary:
+      source_types:
+        - regulatory
+        - official
+        - filing
+        - statute
+        - law
+        - government
+        - directive
+        - eu_commission
+        - legal_document
+        - court_decision
+      description: "Official documents, regulatory filings, legal sources"
+
+    secondary:
+      source_types:
+        - news
+        - analyst
+        - research
+        - report
+        - journal
+        - publication
+        - media
+        - press_release
+        - industry_report
+        - market_research
+      description: "Reputable news, analyst reports, research publications"
+
+    tertiary:
+      source_types:
+        - blog
+        - social
+        - forum
+        - comment
+        - opinion
+        - reddit
+        - twitter
+        - linkedin_post
+        - medium
+        - personal_blog
+      description: "Blogs, social media, opinion pieces"
+
+    unknown:
+      source_types:
+        - unknown
+        - unclassified
+      description: "Source type not classified"
+
+  # Conflict detection settings (deterministic heuristics)
+  conflict_detection:
+    enabled: true
+
+    # Minimum word overlap for conflict detection
+    min_word_overlap: 3
+
+    # Negation words that indicate potential conflict
+    negation_words:
+      - not
+      - no
+      - never
+      - cannot
+      - won't
+      - doesn't
+      - isn't
+      - aren't
+      - wasn't
+      - weren't
+      - haven't
+      - hasn't
+      - hadn't
+
+    # Conflict severity thresholds
+    severity_rules:
+      critical:
+        description: "Direct contradictions on core facts"
+        # Could add more sophisticated rules here in future
+
+      moderate:
+        description: "Contradictions on details, negation patterns"
+        # Current implementation uses negation detection
+
+      minor:
+        description: "Slight discrepancies"
+        # Reserved for future enhancements
+
+  # Integration settings
+  integration:
+    # Automatically register claims from Scout search results
+    auto_register_scout_claims: true
+
+    # Include evidence report in final synthesis
+    include_in_synthesis: true
+
+    # Surface conflicts in action items if severity >= moderate
+    surface_conflicts_threshold: "moderate"
+
+  # Future enhancements (v2)
+  future:
+    # LLM-based semantic conflict detection (optional enhancement)
+    llm_semantic_conflict_detection:
+      enabled: false
+      model_tier: "STANDARD"  # Use Gemini Flash if enabled
+      confidence_threshold: 0.7
+
+    # LLM-based claim extraction from free text (optional)
+    llm_claim_extraction:
+      enabled: false
+      model_tier: "STANDARD"
+      extract_from_reasoning: false  # Keep false for determinism
+
+    # Claim verification against external sources
+    claim_verification:
+      enabled: false
+      trusted_sources:
+        - europa.eu
+        - eur-lex.europa.eu
+        - official government sites

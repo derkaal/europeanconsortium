@@ -95,6 +95,11 @@ def synthesizer_node(state: ConsortiumState) -> Dict[str, Any]:
     if values_escalation_report:
         report["values_escalation_report"] = values_escalation_report
 
+    # Add Evidence Report if Evidence Referee is active (Feature 3)
+    evidence_report = _generate_evidence_report_section(state)
+    if evidence_report:
+        report["evidence_report"] = evidence_report
+
     logger.info("✓ Final recommendation synthesized")
 
     # =========================================================================
@@ -332,3 +337,75 @@ def _extract_strategic_implications(philosopher_response: Dict[str, Any]) -> str
         return "; ".join(implications)
     else:
         return "Fundamental misalignment with organizational values and ethics"
+
+
+def _generate_evidence_report_section(state: ConsortiumState) -> Optional[Dict[str, Any]]:
+    """Generate Evidence Report section for final synthesis.
+
+    Feature 3: Evidence Referee (deterministic)
+
+    Args:
+        state: Current consortium state
+
+    Returns:
+        Evidence report dict if Evidence Referee is active, None otherwise
+    """
+    try:
+        # Check if Evidence Referee is available in the state
+        # The Evidence Referee is typically attached to Scout agent
+        # We need to access it through a global instance or config
+
+        # For now, check if we have evidence data in state
+        # (Future: could store evidence report in state during Scout phase)
+
+        # Try to get Evidence Referee instance
+        from ..tools.evidence_referee import EvidenceReferee
+
+        # Check config for evidence referee path
+        import yaml
+        from pathlib import Path
+
+        config_path = Path("config/evidence_referee.yaml")
+        if not config_path.exists():
+            return None
+
+        with open(config_path) as f:
+            config = yaml.safe_load(f)
+
+        evidence_config = config.get("evidence_referee", {})
+        persist_path = evidence_config.get("persist_path", ".consortium/evidence_referee.db")
+
+        # Check if database exists (if not, Evidence Referee hasn't been used)
+        db_path = Path(persist_path)
+        if not db_path.exists():
+            return None
+
+        # Initialize Evidence Referee to get report
+        evidence_referee = EvidenceReferee(persist_path=persist_path)
+
+        # Generate evidence report
+        report = evidence_referee.generate_evidence_report()
+
+        # Close connection
+        evidence_referee.close()
+
+        # Only include report if there are claims
+        if report["total_claims"] == 0:
+            return None
+
+        # Format for synthesis
+        formatted_report = {
+            "summary": (
+                f"Evidence analysis of {report['total_claims']} claims from research. "
+                f"{report['conflicts_detected']['total']} conflicts detected."
+            ),
+            "evidence_quality": report["evidence_quality"],
+            "conflicts": report["conflicts_detected"],
+            "conflicting_claims": report["conflicting_claims"]
+        }
+
+        return formatted_report
+
+    except Exception as e:
+        logger.warning(f"Failed to generate evidence report: {e}")
+        return None

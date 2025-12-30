@@ -4,6 +4,11 @@ Memory Manager for European Strategy Consortium
 Chroma-based persistent storage and retrieval of strategic cases.
 Implements Hybrid B+C approach: immediate feedback + optional long-term outcomes.
 
+Feature 5: Hybrid Memory Retrieval with Case Fingerprints
+- Deterministic case matching via metadata fingerprints
+- Metadata filtering before vector search (performance + accuracy)
+- Combined scoring: 60% fingerprint similarity + 40% vector similarity
+
 Based on ARCHITECTURE_PART2.md Section 5.
 """
 
@@ -13,6 +18,8 @@ from typing import Dict, List, Optional, Any
 from datetime import datetime
 import chromadb
 from chromadb.config import Settings
+
+from src.consortium.models.case import CaseFingerprint, get_adjacent_sizes
 
 # Note: Using dict-based cases instead of TypedDict classes
 # from src.consortium.state import Case, Outcome, MemoryMetadata, Report
@@ -87,13 +94,15 @@ class MemoryManager:
     def store_case(self, case: Dict[str, Any]) -> str:
         """
         Store a new strategic case with immediate feedback.
-        
+
+        Feature 5: Now includes case fingerprint for deterministic matching.
+
         Args:
             case: Complete case with user feedback
-        
+
         Returns:
             Case ID
-        
+
         Raises:
             ValueError: If case is missing required fields
         """
@@ -102,17 +111,23 @@ class MemoryManager:
             raise ValueError("Case must have an 'id' field")
         if not case.get("query"):
             raise ValueError("Case must have a 'query' field")
-        
+
         # Generate embedding from query + context + recommendation
         embedding_text = self._create_embedding_text(case)
-        
+
         # Get embedding
         try:
             embeddings = self.embedding_function([embedding_text])
             embedding = embeddings[0] if isinstance(embeddings, list) else embeddings
         except Exception as e:
             raise ValueError(f"Failed to generate embedding: {e}")
-        
+
+        # Generate case fingerprint (Feature 5)
+        context = case.get("context", {})
+        context["query"] = case["query"]  # Include query for category detection
+        fingerprint = CaseFingerprint.from_context(context)
+        fingerprint_metadata = fingerprint.to_metadata()
+
         # Prepare metadata for filtering
         # Note: Chroma metadata values must be str, int, float, or bool
         # Complex objects must be JSON-serialized
@@ -123,9 +138,15 @@ class MemoryManager:
             "outcome_status": case.get("outcome", {}).get("status", "not_implemented"),
             "alignment_score": float(case.get("outcome", {}).get("alignment_score") or 0.0),
             "query_length": len(case["query"]),
-            "industry": case.get("context", {}).get("industry", "unknown")
+            "industry": case.get("context", {}).get("industry", "unknown"),
+            # Feature 5: Add fingerprint metadata
+            "market_hash": fingerprint_metadata["market_hash"],
+            "industry_hash": fingerprint_metadata["industry_hash"],
+            "company_size": fingerprint_metadata["company_size"],
+            "regulatory_context": fingerprint_metadata["regulatory_context"],
+            "query_category": fingerprint_metadata["query_category"]
         }
-        
+
         # Store in Chroma
         self.collection.add(
             ids=[case["id"]],
@@ -133,7 +154,7 @@ class MemoryManager:
             documents=[embedding_text],
             metadatas=[metadata]
         )
-        
+
         return case["id"]
     
     def retrieve_similar_cases(
@@ -251,7 +272,220 @@ class MemoryManager:
             "cases": top_cases,
             "retrieval_metadata": retrieval_metadata
         }
-    
+
+    def retrieve_similar_cases_hybrid(
+        self,
+        query: str,
+        context: Dict[str, Any],
+        top_k: int = 3,
+        min_similarity: float = 0.7,
+        fingerprint_weight: float = 0.6,
+        vector_weight: float = 0.4
+    ) -> Dict[str, Any]:
+        """
+        Retrieve similar cases using hybrid fingerprint + vector approach.
+
+        Feature 5: Hybrid Memory Retrieval
+        1. Generate fingerprint from query context
+        2. Filter by metadata (regulatory context, adjacent company sizes)
+        3. Perform vector search on filtered set
+        4. Re-rank by combined score: fingerprint_weight * fingerprint_similarity +
+                                      vector_weight * vector_similarity
+
+        This approach:
+        - Reduces false positives from semantic drift
+        - Improves performance (metadata filtering before vector search)
+        - Provides explainable matching (fingerprint component)
+
+        Args:
+            query: Query string to search for
+            context: Query context dict with markets, industry, company_size, etc.
+            top_k: Maximum number of cases to return (default: 3)
+            min_similarity: Minimum combined similarity threshold (default: 0.7)
+            fingerprint_weight: Weight for fingerprint similarity (default: 0.6)
+            vector_weight: Weight for vector similarity (default: 0.4)
+
+        Returns:
+            Dict with 'cases' (List[Dict]) and 'retrieval_metadata'
+        """
+        # Generate query fingerprint
+        context_with_query = {**context, "query": query}
+        query_fingerprint = CaseFingerprint.from_context(context_with_query)
+
+        # Build metadata filter
+        # Filter by regulatory context and adjacent company sizes
+        adjacent_sizes = get_adjacent_sizes(query_fingerprint.company_size)
+
+        # Chroma doesn't support $in operator easily, so we'll fetch more results
+        # and filter in Python. For regulatory context, we can use exact match or
+        # fetch all and filter later.
+        where_filter = {
+            "regulatory_context": query_fingerprint.regulatory_context
+        }
+
+        # If company_size is known, add to filter
+        # We'll handle adjacent sizes post-filtering since Chroma's $or is complex
+        if query_fingerprint.company_size != "Unknown":
+            # We'll filter adjacent sizes in Python after retrieval
+            pass
+
+        # Generate query embedding
+        try:
+            query_embeddings = self.embedding_function([query])
+            query_embedding = query_embeddings[0] if isinstance(query_embeddings, list) else query_embeddings
+        except Exception as e:
+            return {
+                "cases": [],
+                "retrieval_metadata": {
+                    "total_matches": 0,
+                    "filtered_by_fingerprint": 0,
+                    "returned": 0,
+                    "cold_start": True,
+                    "confidence_adjustment": -0.15,
+                    "warning": f"Embedding generation failed: {e}"
+                }
+            }
+
+        # Query with metadata filter
+        # Fetch more results since we'll filter by adjacent sizes in Python
+        try:
+            results = self.collection.query(
+                query_embeddings=[query_embedding],
+                n_results=top_k * 5,  # Fetch more to account for post-filtering
+                where=where_filter,
+                include=["documents", "metadatas", "distances"]
+            )
+        except Exception as e:
+            # If metadata filter fails, try without filter
+            results = self.collection.query(
+                query_embeddings=[query_embedding],
+                n_results=top_k * 5,
+                include=["documents", "metadatas", "distances"]
+            )
+
+        if not results["ids"] or not results["ids"][0]:
+            return {
+                "cases": [],
+                "retrieval_metadata": {
+                    "total_matches": 0,
+                    "filtered_by_fingerprint": 0,
+                    "returned": 0,
+                    "cold_start": True,
+                    "confidence_adjustment": -0.15,
+                    "warning": "No cases found matching context fingerprint"
+                }
+            }
+
+        # Filter by adjacent company sizes and calculate hybrid scores
+        hybrid_cases = []
+
+        for i, case_id in enumerate(results["ids"][0]):
+            metadata = results["metadatas"][0][i]
+            distance = results["distances"][0][i]
+            vector_similarity = 1.0 - distance
+
+            # Filter by company size (must be in adjacent sizes)
+            case_size = metadata.get("company_size", "Unknown")
+            if case_size not in adjacent_sizes:
+                continue
+
+            # Reconstruct case fingerprint from metadata
+            case_fingerprint = CaseFingerprint(
+                market_hash=metadata["market_hash"],
+                industry_hash=metadata["industry_hash"],
+                company_size=metadata["company_size"],
+                regulatory_context=metadata["regulatory_context"],
+                query_category=metadata["query_category"]
+            )
+
+            # Calculate fingerprint similarity
+            fingerprint_similarity = query_fingerprint.similarity_score(case_fingerprint)
+
+            # Calculate combined score
+            combined_score = (
+                fingerprint_weight * fingerprint_similarity +
+                vector_weight * vector_similarity
+            )
+
+            # Apply minimum similarity threshold
+            if combined_score < min_similarity:
+                continue
+
+            case_dict = {
+                "id": case_id,
+                "query": results["documents"][0][i],
+                "vector_similarity": vector_similarity,
+                "fingerprint_similarity": fingerprint_similarity,
+                "combined_score": combined_score,
+                "match_explanation": self._explain_fingerprint_match(
+                    query_fingerprint, case_fingerprint
+                ),
+                "metadata": metadata
+            }
+
+            hybrid_cases.append(case_dict)
+
+        # Sort by combined score
+        hybrid_cases.sort(key=lambda c: c["combined_score"], reverse=True)
+        top_cases = hybrid_cases[:top_k]
+
+        # Create retrieval metadata
+        retrieval_metadata = {
+            "total_matches": len(results["ids"][0]),
+            "filtered_by_fingerprint": len(hybrid_cases),
+            "returned": len(top_cases),
+            "cold_start": len(top_cases) == 0,
+            "confidence_adjustment": 0.0 if len(top_cases) > 0 else -0.15,
+            "fingerprint_weight": fingerprint_weight,
+            "vector_weight": vector_weight,
+            "query_fingerprint": query_fingerprint.to_metadata(),
+            "warning": "No matching cases found" if len(top_cases) == 0 else None
+        }
+
+        return {
+            "cases": top_cases,
+            "retrieval_metadata": retrieval_metadata
+        }
+
+    def _explain_fingerprint_match(
+        self,
+        query_fp: CaseFingerprint,
+        case_fp: CaseFingerprint
+    ) -> str:
+        """
+        Generate human-readable explanation of fingerprint match.
+
+        Args:
+            query_fp: Query fingerprint
+            case_fp: Case fingerprint
+
+        Returns:
+            Explanation string
+        """
+        matches = []
+
+        if query_fp.market_hash == case_fp.market_hash:
+            matches.append("exact market match")
+
+        if query_fp.industry_hash == case_fp.industry_hash:
+            matches.append("exact industry match")
+
+        if query_fp.company_size == case_fp.company_size:
+            matches.append("exact size match")
+        elif query_fp._is_adjacent_size(query_fp.company_size, case_fp.company_size):
+            matches.append("adjacent size match")
+
+        if query_fp.regulatory_context == case_fp.regulatory_context:
+            matches.append("same regulatory context")
+
+        if query_fp.query_category == case_fp.query_category:
+            matches.append("same query category")
+
+        if not matches:
+            return "weak contextual match"
+
+        return ", ".join(matches)
+
     def update_outcome(self, case_id: str, outcome: Dict[str, Any]) -> bool:
         """
         Update existing case with long-term implementation outcome.

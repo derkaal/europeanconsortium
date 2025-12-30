@@ -347,7 +347,10 @@ if analyze_button:
         if len(enabled_agents) == 0:
             st.error("Please enable at least one agent.")
         else:
-            with st.spinner(f"Consulting {len(enabled_agents)} agents..."):
+            # Create status container for real-time progress updates
+            status_container = st.status("🚀 Initializing European Strategy Consortium...", expanded=True)
+
+            with status_container:
                 # Real or mock implementation
                 if demo_mode:
                     # Build context
@@ -857,23 +860,61 @@ if analyze_button:
                             context["constraints"] = constraints
                         
                         # Display tiered LLM info
-                        st.info(
-                            "🤖 Using Tiered LLM System: Mistral Large (EU) for reasoning, "
-                            "Gemini Flash for synthesis/routing"
-                        )
-                        
+                        st.write("🤖 Using Tiered LLM System: Mistral Large (EU) for reasoning, Gemini Flash for synthesis/routing")
+
                         # Create the graph
+                        st.write("📊 Building consortium graph...")
                         graph = create_consortium_graph()
-                        
+
                         # Create initial state
+                        st.write("📝 Creating initial state...")
                         initial_state = create_initial_state(
                             query=query,
                             context=context
                         )
-                        
-                        # Run the graph
-                        result = graph.invoke(initial_state)
-                        
+
+                        # Run the graph with streaming updates
+                        st.write("🔄 Executing multi-agent deliberation...")
+                        result = None
+
+                        # Node display names for better UX
+                        node_names = {
+                            "scout": "🔍 Scout Agent (gathering intelligence)",
+                            "agent_executor": "👥 Consulting agents",
+                            "convergence_test": "🎯 Testing convergence",
+                            "tension_resolver": "⚖️ Resolving tensions",
+                            "architect_revision": "🏗️ Architect reviewing",
+                            "advantage_analysis": "💡 Analyzing competitive advantages",
+                            "synthesizer": "📋 Synthesizing final recommendation",
+                            "cla_gate": "🧟 CLA zombie detection"
+                        }
+
+                        # Stream through graph execution
+                        for chunk in graph.stream(initial_state):
+                            # chunk is a dict with node_name: output
+                            for node_name, output in chunk.items():
+                                display_name = node_names.get(node_name, f"🔧 {node_name}")
+                                st.write(f"✓ {display_name}")
+
+                                # Show agent details if available
+                                if node_name == "agent_executor" and isinstance(output, dict):
+                                    agent_responses = output.get("agent_responses", {})
+                                    if agent_responses:
+                                        completed = len([r for r in agent_responses.values() if r])
+                                        total = len(enabled_agents)
+                                        st.write(f"  → {completed}/{total} agents completed")
+
+                                # Store final result
+                                if "final_recommendation" in output:
+                                    result = output
+
+                        # Ensure we have a result
+                        if result is None:
+                            result = initial_state  # Fallback to last known state
+
+                        # Complete the status
+                        status_container.update(label="✅ Analysis Complete!", state="complete")
+
                         # Update cost tracking from tiered provider
                         try:
                             provider = get_tiered_provider()

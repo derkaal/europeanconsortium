@@ -44,7 +44,22 @@ def cla_gate_node(state: Dict[str, Any]) -> Dict[str, Any]:
         cla_config = {
             "agent_id": "cla",
             "name": "Conditionality & Leverage Agent",
-            "mandate": "Evaluate temporal robustness"
+            "mandate": "Evaluate temporal robustness",
+            "system_prompt": "You are the Conditionality & Leverage Agent (CLA). Evaluate proposals for temporal robustness.",
+            "red_lines": [
+                "Proposals without explicit reversibility mechanisms",
+                "Endogenous review triggers",
+                "Unallocated downside risk",
+                "Enforcement relying solely on political will"
+            ],
+            "acceptance_criteria": {
+                "BLOCK": "Proposal fails one or more of the 4 tests",
+                "ACCEPT": "Proposal passes all 4 tests with explicit mechanisms"
+            },
+            "knowledge_domains": [
+                "Fritz Scharpf Joint-Decision Trap theory",
+                "European governance pathologies"
+            ]
         }
     
     cla = CLAAgent(cla_config)

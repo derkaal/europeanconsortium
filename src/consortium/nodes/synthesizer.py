@@ -262,10 +262,10 @@ def _extract_action_items(state: ConsortiumState) -> List[Dict[str, Any]]:
 
     for agent_id, response in state.get("agent_responses", {}).items():
         rating = response.get("rating")
-        reasoning = response.get("reasoning", "")
+        reasoning = response.get("reasoning") or ""
 
         if rating == "WARN":
-            mitigation = response.get("mitigation_plan", "")
+            mitigation = response.get("mitigation_plan") or ""
             items.append({
                 "action": f"Resolve {agent_id} concerns",
                 "owner": "Strategy Team",

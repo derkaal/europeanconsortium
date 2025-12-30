@@ -131,9 +131,9 @@ def format_executive_recommendation(
     Returns:
         Board-grade formatted recommendation
     """
-    strength = recommendation_data.get("strength", "REQUIRES FURTHER ANALYSIS")
-    confidence = recommendation_data.get("avg_confidence", 0)
-    summary = recommendation_data.get("summary", "")
+    strength = recommendation_data.get("strength") or "REQUIRES FURTHER ANALYSIS"
+    confidence = recommendation_data.get("avg_confidence") or 0
+    summary = recommendation_data.get("summary") or ""
 
     # Apply voice rules to summary
     summary_clean, warnings = apply_voice_rules(summary)
@@ -183,10 +183,10 @@ def format_action_items_board_grade(
     formatted = []
 
     for item in action_items:
-        action = item.get("action", "")
-        owner = item.get("owner", "")
-        priority = item.get("priority", "")
-        details = item.get("details", "")
+        action = item.get("action") or ""
+        owner = item.get("owner") or ""
+        priority = item.get("priority") or ""
+        details = item.get("details") or ""
 
         # Apply voice rules to action and details
         action_clean, _ = apply_voice_rules(action)

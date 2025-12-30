@@ -105,7 +105,7 @@ st.markdown("""
 st.title("🇪🇺 European Strategy Consortium")
 st.markdown("""
 Multi-agent deliberation system for European business strategy.
-10 specialized agents evaluate proposals through adversarial collaboration,
+12 specialized agents evaluate proposals through adversarial collaboration,
 converging on **"Yes, If"** recommendations.
 """)
 
@@ -152,6 +152,19 @@ with st.sidebar:
     )
     consumer_voice_enabled = st.checkbox(
         "👥 Consumer Voice (User Protection)", value=True
+    )
+
+    # Feature Subsidy Agents
+    st.markdown("**Feature Subsidy Agents**")
+    alchemist_enabled = st.checkbox(
+        "💎 Alchemist (Regulation-to-Value)",
+        value=True,
+        help="Transforms regulatory constraints into competitive advantages"
+    )
+    founder_enabled = st.checkbox(
+        "🚀 Founder (Feature Hunter)",
+        value=True,
+        help="Hunts Feature Subsidies and regulatory arbitrage opportunities"
     )
 
     # Meta
@@ -343,6 +356,10 @@ if analyze_button:
             enabled_agents.append("technologist")
         if consumer_voice_enabled:
             enabled_agents.append("consumer_voice")
+        if alchemist_enabled:
+            enabled_agents.append("alchemist")
+        if founder_enabled:
+            enabled_agents.append("founder")
 
         if len(enabled_agents) == 0:
             st.error("Please enable at least one agent.")
@@ -467,6 +484,41 @@ if analyze_button:
                                        "customers if their data affected by "
                                        "cloud migration.",
                             "color": "accept"
+                        },
+                        "alchemist": {
+                            "rating": "ENDORSE",
+                            "confidence": 0.90,
+                            "reasoning": "LEVEL 5 ALCHEMY DETECTED: GDPR + AI "
+                                       "Act compliance can be transmuted into "
+                                       "competitive moat. Trust Premium: "
+                                       "Position as 'German Engineering on "
+                                       "Secure European Cloud' → 15% B2B "
+                                       "premium (€3.2M/year). Moat Analysis: "
+                                       "Your compliance-native infrastructure "
+                                       "costs €1 to maintain; competitors "
+                                       "retrofitting legacy systems cost €10. "
+                                       "Market Creation: Sell 'EU-Secure Cloud "
+                                       "Migration Services' to other automotive "
+                                       "firms.",
+                            "color": "endorse"
+                        },
+                        "founder": {
+                            "rating": "ENDORSE",
+                            "confidence": 0.88,
+                            "reasoning": "FEATURE SUBSIDY STACK IDENTIFIED: "
+                                       "(1) Data Sovereignty Premium: 15% price "
+                                       "uplift on R&D services = €3.2M/year. "
+                                       "(2) Carbon Credits: Renewable energy "
+                                       "cloud = ETS credit capture. (3) AI "
+                                       "Sovereignty: Build internal Mistral AI "
+                                       "capability → sell 'EU-Sovereign AI for "
+                                       "Automotive' as new revenue stream. "
+                                       "Arbitrage Window: 18 months before "
+                                       "competitors wake up to Cloud Act risks. "
+                                       "Revenue Transformation: €4M savings + "
+                                       "€3.2M premium + €2M new AI services = "
+                                       "€9.2M total value. NO GRANTS NEEDED.",
+                            "color": "endorse"
                         },
                     }
 
@@ -627,7 +679,9 @@ if analyze_button:
                                 "philosopher": "🧠 Philosopher",
                                 "ethnographer": "🌍 Ethnographer",
                                 "technologist": "🔒 Technologist",
-                                "consumer_voice": "👥 Consumer Voice"
+                                "consumer_voice": "👥 Consumer Voice",
+                                "alchemist": "💎 Alchemist",
+                                "founder": "🚀 Founder"
                             }
 
                             st.markdown(f"""
@@ -972,7 +1026,9 @@ if analyze_button:
                             "philosopher": "🧠 Philosopher",
                             "ethnographer": "🌍 Ethnographer",
                             "technologist": "🔒 Technologist",
-                            "consumer_voice": "👥 Consumer Voice"
+                            "consumer_voice": "👥 Consumer Voice",
+                            "alchemist": "💎 Alchemist",
+                            "founder": "🚀 Founder"
                         }
                         
                         cols = st.columns(3)
@@ -1116,7 +1172,7 @@ elif st.session_state.analysis_results and not PDF_AVAILABLE:
 st.divider()
 st.markdown("""
 <div style='text-align: center; color: #666; font-size: 0.9em;'>
-    <p>European Strategy Consortium • 10 Agents + CLA Meta-Agent •
+    <p>European Strategy Consortium • 12 Agents + CLA Meta-Agent •
        "Yes, If" Protocol</p>
     <p>Built with LangGraph • Powered by Claude/GPT-4/Mistral •
        <a href='https://github.com/yourusername/european-consortium'>

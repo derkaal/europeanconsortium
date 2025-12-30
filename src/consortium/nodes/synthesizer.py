@@ -49,7 +49,7 @@ def synthesizer_node(state: ConsortiumState) -> Dict[str, Any]:
             "reasoning": response.get("reasoning")
         }
     
-    # Extract action items
+    # Extract action items with board-grade voice (Feature 4)
     action_items = _extract_action_items(state)
     
     # Build decision provenance
@@ -154,14 +154,17 @@ def synthesizer_node(state: ConsortiumState) -> Dict[str, Any]:
 
 
 def _generate_recommendation(state: ConsortiumState) -> str:
-    """Generate executive-level recommendation."""
-    
+    """Generate executive-level recommendation with board-grade voice.
+
+    Feature 4: Final Recommendation Voice (board-grade)
+    """
+
     responses = state.get("agent_responses", {})
     convergence = state.get("convergence_status", {})
-    
+
     if not responses:
         return "Insufficient agent input to generate recommendation."
-    
+
     # Count ratings
     blocks = sum(
         1 for r in responses.values()
@@ -179,7 +182,7 @@ def _generate_recommendation(state: ConsortiumState) -> str:
         1 for r in responses.values()
         if r.get("rating") == "ENDORSE"
     )
-    
+
     # Generate recommendation based on consensus
     if convergence.get("converged"):
         if endorses >= 2:
@@ -193,18 +196,32 @@ def _generate_recommendation(state: ConsortiumState) -> str:
             strength = "NOT RECOMMENDED"
         else:
             strength = "REQUIRES FURTHER ANALYSIS"
-    
+
     avg_conf = convergence.get("avg_confidence", 0)
-    
-    recommendation = f"""{strength} (Confidence: {avg_conf:.0f}%)
 
-Based on analysis by {len(responses)} expert agents, the consortium's \
-assessment is:
-{_summarize_consensus(responses)}
+    # Generate summary with board-grade voice
+    summary = _summarize_consensus(responses)
 
-Key considerations from the expert panel are detailed in the supporting \
-arguments below."""
-    
+    # Apply voice rules (Feature 4)
+    try:
+        from ..tools.voice_rules import format_executive_recommendation
+
+        recommendation = format_executive_recommendation({
+            "strength": strength,
+            "avg_confidence": avg_conf,
+            "summary": summary
+        })
+
+    except Exception as e:
+        logger.warning(f"Failed to apply voice rules (using fallback): {e}")
+        # Fallback to basic formatting
+        recommendation = f"""{strength} (Confidence: {avg_conf:.0f}%)
+
+Based on analysis by {len(responses)} expert agents, the consortium's assessment is:
+{summary}
+
+Key considerations from the expert panel are detailed in the supporting arguments below."""
+
     return recommendation
 
 
@@ -226,7 +243,10 @@ def _summarize_consensus(responses: Dict[str, Any]) -> str:
 
 
 def _extract_action_items(state: ConsortiumState) -> List[Dict[str, Any]]:
-    """Extract action items from agent responses."""
+    """Extract action items from agent responses with board-grade voice.
+
+    Feature 4: Final Recommendation Voice (board-grade)
+    """
 
     items = []
 
@@ -237,9 +257,9 @@ def _extract_action_items(state: ConsortiumState) -> List[Dict[str, Any]]:
         if rating == "WARN":
             mitigation = response.get("mitigation_plan", "")
             items.append({
-                "action": f"Address {agent_id} concerns",
+                "action": f"Resolve {agent_id} concerns",
                 "owner": "Strategy Team",
-                "priority": "High",
+                "priority": "HIGH",
                 "details": (
                     mitigation[:100] + "..."
                     if len(mitigation) > 100
@@ -248,11 +268,18 @@ def _extract_action_items(state: ConsortiumState) -> List[Dict[str, Any]]:
             })
         elif rating == "BLOCK":
             items.append({
-                "action": f"CRITICAL: Resolve {agent_id} blocking issue",
+                "action": f"CRITICAL: Resolve {agent_id} blocking constraints",
                 "owner": "Executive Team",
-                "priority": "Critical",
+                "priority": "CRITICAL",
                 "details": reasoning[:100] + "..."
             })
+
+    # Apply voice rules to action items (Feature 4)
+    try:
+        from ..tools.voice_rules import format_action_items_board_grade
+        items = format_action_items_board_grade(items)
+    except Exception as e:
+        logger.warning(f"Failed to apply voice rules to action items: {e}")
 
     return items
 

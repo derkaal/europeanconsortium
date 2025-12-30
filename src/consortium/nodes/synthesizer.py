@@ -100,6 +100,16 @@ def synthesizer_node(state: ConsortiumState) -> Dict[str, Any]:
     if evidence_report:
         report["evidence_report"] = evidence_report
 
+    # Add Competitive Advantage Analysis if available (Feature 6)
+    advantage_analysis = state.get("advantage_analysis")
+    if advantage_analysis and advantage_analysis.get("enabled"):
+        report["competitive_advantages"] = {
+            "advantages": advantage_analysis.get("advantages", []),
+            "opportunities": advantage_analysis.get("opportunities", []),
+            "recommendations": advantage_analysis.get("recommendations", []),
+            "pattern_matches": advantage_analysis.get("pattern_matches", 0)
+        }
+
     logger.info("✓ Final recommendation synthesized")
 
     # =========================================================================

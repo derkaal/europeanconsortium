@@ -130,3 +130,33 @@ output_format:
   include_conflicting_info: true
   include_provider_metadata: true  # Which search provider returned each result
   max_findings_per_agent: 5
+
+# Budget management (COST CONTROL)
+budgets:
+  enabled: true
+  monthly_limit: 900                 # Leave 100 buffer for Brave free tier (1000/month)
+  per_query_limit: 15                # Max searches per user query
+  per_agent_limit: 3                 # Max searches per agent domain
+  time_budget_seconds: 30            # Max wall time for research phase
+  diminishing_returns_threshold: 3   # Stop if N consecutive searches add no new facts
+
+  # Persistence & reset rules (required)
+  persist_backend: "sqlite"          # "sqlite" or "file"
+  persist_path: "data/scout_budget.db"
+  reset_rule: "calendar_month"       # calendar month boundaries
+  timezone: "Europe/Berlin"          # required for calendar month reset
+  count_only_on_cache_miss: true     # required: cache hits do not consume budget
+
+# Search result caching (COST REDUCTION)
+cache:
+  enabled: true
+  backend: "sqlite"                  # "sqlite" or "file"
+  db_path: "data/scout_cache.db"
+  default_ttl_days: 7
+
+  # TTL overrides by content category
+  ttl_overrides:
+    regulatory: 30                   # Regulations change slowly
+    pricing: 1                       # Pricing changes fast
+    news: 1                          # News is ephemeral
+    ai_models: 3                     # AI releases are frequent

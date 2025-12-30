@@ -73,15 +73,33 @@ def cla_gate_node(state: Dict[str, Any]) -> Dict[str, Any]:
         return {"cla_gate_status": "OPEN", "cla_review": None}
     
     verdict = review.get("verdict", "ZOMBIE_RISK")
-    
+
     if verdict == "STRUCTURALLY_CREDIBLE":
         gate_status = "OPEN"
         logger.info("✓ CLA: Proposal is structurally credible - GATE OPEN")
     else:
         gate_status = "CLOSED"
         logger.warning(f"✗ CLA: {verdict} - GATE CLOSED")
-        logger.warning(f"  Failed tests: {review.get('failed_tests', [])}")
-        logger.warning(f"  {review.get('critique', 'No critique')}")
+        failed_tests = review.get('failed_tests', [])
+        critique = review.get('critique', 'No specific critique provided.')
+        logger.warning(f"  Failed tests: {failed_tests}")
+        logger.warning(f"  Critique: {critique}")
+
+        # Log mechanism patch status for debugging
+        mechanism_patch = review.get('mechanism_patch')
+        if mechanism_patch:
+            logger.info(f"  CLA provided mechanism patch:")
+            logger.info(f"    - Trigger: {mechanism_patch.get('trigger', 'N/A')}")
+            logger.info(f"    - Action: {mechanism_patch.get('action', 'N/A')}")
+            logger.info(f"    - Authority: {mechanism_patch.get('authority', 'N/A')}")
+        else:
+            logger.warning(f"  ⚠ CLA did not provide a mechanism patch")
+
+        # Log raw reasoning for debugging (truncated)
+        reasoning = review.get('reasoning', '')
+        if reasoning:
+            reasoning_preview = reasoning[:300] + "..." if len(reasoning) > 300 else reasoning
+            logger.debug(f"  CLA reasoning (preview): {reasoning_preview}")
     
     # Add CLA to agent responses
     agent_responses = {**state.get("agent_responses", {}), "cla": review}

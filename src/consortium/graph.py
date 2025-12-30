@@ -19,7 +19,7 @@ from .nodes import (
 )
 
 
-def create_consortium_graph(search_tool=None, enable_scout: bool = True):
+def create_consortium_graph(search_tool=None, enable_scout: bool = False):
     """Create the main consortium graph with optional Scout and CLA gate.
 
     The Scout runs BEFORE routing to gather current intelligence for agents.
@@ -29,7 +29,7 @@ def create_consortium_graph(search_tool=None, enable_scout: bool = True):
     Args:
         search_tool: Optional web search tool for Scout (Tavily, Brave, etc.)
         enable_scout: Whether to enable Scout upstream research (default: False)
-                     Note: Scout requires async implementation, currently disabled
+                     Note: Scout requires search_tool parameter to function
 
     Returns:
         Compiled LangGraph instance

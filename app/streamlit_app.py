@@ -924,7 +924,8 @@ if analyze_button:
                         st.write("📝 Creating initial state...")
                         initial_state = create_initial_state(
                             query=query,
-                            context=context
+                            context=context,
+                            max_iterations=max_iterations
                         )
 
                         # Run the graph with streaming updates

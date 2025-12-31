@@ -19,30 +19,31 @@ logger = logging.getLogger(__name__)
 
 def convergence_test_node(state: ConsortiumState) -> Dict[str, Any]:
     """Test if agent responses have converged.
-    
+
     Convergence Criteria (ALL must be met):
     1. Zero BLOCK ratings
     2. Max 2 WARN ratings with mitigations
     3. Combined confidence >70%
     4. ≥60% agents rate ACCEPT/ENDORSE
-    
-    FORCED CONVERGENCE: After 5 iterations, force convergence to prevent
-    infinite loops, even if criteria not met.
-    
+
+    FORCED CONVERGENCE: After max_iterations (configurable, default 5), force
+    convergence to prevent infinite loops, even if criteria not met.
+
     LANGGRAPH PATTERN: Return partial state update with convergence_status.
-    
+
     Args:
         state: Current consortium state
-        
+
     Returns:
         Partial state update with convergence_status and iteration_count
     """
     responses = state.get("agent_responses", {})
     iteration_count = state.get("iteration_count", 0)
-    
+    max_iterations = state.get("max_iterations", 5)  # Read from state, default to 5
+
     # Increment iteration counter
     new_iteration_count = iteration_count + 1
-    
+
     if not responses:
         logger.warning("No agent responses to test for convergence")
         return {
@@ -52,17 +53,17 @@ def convergence_test_node(state: ConsortiumState) -> Dict[str, Any]:
             },
             "iteration_count": new_iteration_count
         }
-    
+
     logger.info(
         f"Testing convergence for {len(responses)} agent responses "
-        f"(iteration {new_iteration_count})"
+        f"(iteration {new_iteration_count}/{max_iterations})"
     )
-    
-    # FORCED CONVERGENCE: After 3 iterations, stop regardless
-    MAX_ITERATIONS = 3
-    if new_iteration_count >= MAX_ITERATIONS:
+
+    # FORCED CONVERGENCE: After max_iterations, stop regardless
+    if new_iteration_count >= max_iterations:
         logger.warning(
-            f"⚠ FORCED CONVERGENCE after {new_iteration_count} iterations"
+            f"⚠ FORCED CONVERGENCE after {new_iteration_count} iterations "
+            f"(max: {max_iterations})"
         )
         # Calculate avg_confidence even for forced convergence
         confidences = [r.get("confidence", 0.0) for r in responses.values()]
@@ -81,7 +82,7 @@ def convergence_test_node(state: ConsortiumState) -> Dict[str, Any]:
                 "converged": True,
                 "reason": (
                     f"Forced convergence after {new_iteration_count} "
-                    f"iterations (max: {MAX_ITERATIONS})"
+                    f"iterations (max: {max_iterations})"
                 ),
                 "forced": True,
                 "avg_confidence": avg_confidence_pct,
@@ -107,7 +108,7 @@ def convergence_test_node(state: ConsortiumState) -> Dict[str, Any]:
         if not can_proceed:
             logger.info(
                 f"Convergence blocked by gates: {gate_status['gate_decision']} "
-                f"(iteration {new_iteration_count}/{MAX_ITERATIONS})"
+                f"(iteration {new_iteration_count}/{max_iterations})"
             )
             return {
                 "convergence_status": {
@@ -135,7 +136,7 @@ def convergence_test_node(state: ConsortiumState) -> Dict[str, Any]:
         if blocks:
             logger.info(
                 f"Convergence failed: {len(blocks)} BLOCK ratings "
-                f"(iteration {new_iteration_count}/{MAX_ITERATIONS})"
+                f"(iteration {new_iteration_count}/{max_iterations})"
             )
             return {
                 "convergence_status": {

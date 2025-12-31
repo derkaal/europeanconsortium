@@ -998,8 +998,16 @@ if analyze_button:
                             "convergence_status": result.get(
                                 "convergence_status", {}
                             ),
+                            "iteration_count": result.get("iteration_count", 1),  # Store top-level iteration_count
                             "research_briefing": result.get("research_briefing")
                         }
+
+                        # Debug logging for convergence status
+                        conv_status = result.get("convergence_status", {})
+                        logger.info(f"Final convergence status: converged={conv_status.get('converged')}, "
+                                   f"iterations={conv_status.get('iteration_count')}, "
+                                   f"positive%={conv_status.get('positive_percentage')}, "
+                                   f"top-level iterations={result.get('iteration_count')}")
                         
                         # Display success
                         # Use agent_responses to count agents, fallback to enabled_agents
@@ -1207,7 +1215,8 @@ if st.session_state.analysis_results and not analyze_button:
         st.warning("**Rating: ESCALATED TO HUMAN**")
 
     positive_pct = conv.get('positive_percentage', 0)
-    iteration_count = conv.get('iteration_count', saved_results.get('iteration_count', 1))
+    # Prefer top-level iteration_count, then convergence_status, then default to 1
+    iteration_count = saved_results.get('iteration_count', conv.get('iteration_count', 1))
     col1, col2 = st.columns(2)
     with col1:
         st.metric("Consensus", f"{positive_pct:.0f}%")

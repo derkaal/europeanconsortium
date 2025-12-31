@@ -137,7 +137,7 @@ class TavilySearchTool(BaseSearchTool):
         search_depth: str = "basic"
     ) -> List[Dict[str, Any]]:
         """
-        Execute Tavily web search.
+        Execute Tavily web search with retry logic.
 
         Args:
             query: Search query
@@ -151,35 +151,55 @@ class TavilySearchTool(BaseSearchTool):
             logger.warning("Tavily client not available")
             return []
 
-        try:
-            # Tavily client is sync, run in executor
-            loop = asyncio.get_event_loop()
-            response = await loop.run_in_executor(
-                None,
-                lambda: self.client.search(
-                    query=query,
-                    max_results=max_results,
-                    search_depth=search_depth
+        # Retry with exponential backoff for SSL errors
+        max_retries = 3
+        retry_delays = [1, 2, 4]  # seconds
+
+        for attempt in range(max_retries):
+            try:
+                # Tavily client is sync, run in executor
+                loop = asyncio.get_event_loop()
+                response = await loop.run_in_executor(
+                    None,
+                    lambda: self.client.search(
+                        query=query,
+                        max_results=max_results,
+                        search_depth=search_depth
+                    )
                 )
-            )
 
-            results = []
-            for item in response.get("results", []):
-                results.append({
-                    "title": item.get("title", ""),
-                    "snippet": item.get("content", ""),
-                    "url": item.get("url", ""),
-                    "score": item.get("score", 0),
-                    "source": self._extract_source(item.get("url", "")),
-                    "provider": "tavily"
-                })
+                results = []
+                for item in response.get("results", []):
+                    results.append({
+                        "title": item.get("title", ""),
+                        "snippet": item.get("content", ""),
+                        "url": item.get("url", ""),
+                        "score": item.get("score", 0),
+                        "source": self._extract_source(item.get("url", "")),
+                        "provider": "tavily"
+                    })
 
-            logger.info(f"Tavily returned {len(results)} results for: {query[:50]}...")
-            return results
+                logger.info(f"Tavily returned {len(results)} results for: {query[:50]}...")
+                return results
 
-        except Exception as e:
-            logger.error(f"Tavily search failed: {e}")
-            return []
+            except Exception as e:
+                error_msg = str(e)
+                is_ssl_error = "SSL" in error_msg or "ssl" in error_msg.lower()
+                is_connection_error = "Connection" in error_msg or "Max retries" in error_msg
+
+                if attempt < max_retries - 1 and (is_ssl_error or is_connection_error):
+                    delay = retry_delays[attempt]
+                    logger.warning(
+                        f"Tavily search failed (attempt {attempt + 1}/{max_retries}): {error_msg}. "
+                        f"Retrying in {delay}s..."
+                    )
+                    await asyncio.sleep(delay)
+                    continue
+                else:
+                    logger.error(f"Tavily search failed after {attempt + 1} attempts: {e}")
+                    return []
+
+        return []
 
 
 class BraveSearchTool(BaseSearchTool):

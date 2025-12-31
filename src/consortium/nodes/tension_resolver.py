@@ -34,17 +34,20 @@ def tension_resolver_node(state: ConsortiumState) -> Dict[str, Any]:
         orchestrator = TensionOrchestrator()
         
         # Resolve next tension using orchestrator
+        # Note: orchestrator returns the full updated state
         result = orchestrator.resolve_next_tension(state)
-        
+
         if result:
+            # Extract active_tensions from the returned state
+            updated_tensions = result.get("active_tensions", [])
             logger.info(
-                f"Tension resolved. Remaining: {len(result['tensions'])}"
+                f"Tension resolved. Remaining: {len(updated_tensions)}"
             )
             # Return updated tensions and potentially updated proposal
             return {
-                "active_tensions": result["tensions"],
+                "active_tensions": updated_tensions,
                 "current_proposal": result.get(
-                    "proposal", state.get("current_proposal")
+                    "current_proposal", state.get("current_proposal")
                 )
             }
         else:

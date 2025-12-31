@@ -534,7 +534,8 @@ def build_table_of_contents(chapters: List[Dict[str, Any]], styles: Dict) -> Lis
     toc_items.extend([
         "Appendix A: Agent Analysis Details",
         "Appendix B: Tensions & Resolutions",
-        "Appendix C: Methodology"
+        "Appendix C: External Sources",
+        "Appendix D: Methodology"
     ])
 
     # Build TOC list

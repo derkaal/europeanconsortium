@@ -11,7 +11,7 @@ Generates professional, board-grade PDF reports with structured sections:
 
 from datetime import datetime
 from io import BytesIO
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 
 try:
     from reportlab.lib.pagesizes import A4

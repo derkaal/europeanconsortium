@@ -155,7 +155,7 @@ def generate_consortium_pdf(
 
     # Add convergence metrics table
     story.append(build_subsection_header("Decision Metrics", styles))
-    story.append(build_convergence_metrics_table(convergence_status, styles))
+    story.append(build_convergence_metrics_table(convergence_status, styles, agent_responses))
     story.append(PageBreak())
 
     # ===== RECOMMENDED SOLUTIONS =====

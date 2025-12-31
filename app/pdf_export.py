@@ -66,7 +66,8 @@ def generate_consortium_pdf(
     agent_responses: Dict[str, Any],
     tensions: List[Dict[str, Any]],
     final_recommendation: Dict[str, Any],
-    convergence_status: Dict[str, Any]
+    convergence_status: Dict[str, Any],
+    research_briefing: Optional[Dict[str, Any]] = None
 ) -> BytesIO:
     """
     Generate structured PDF report of consortium analysis.
@@ -78,6 +79,7 @@ def generate_consortium_pdf(
         tensions: List of detected tensions
         final_recommendation: Final recommendation dict
         convergence_status: Convergence status dict
+        research_briefing: Scout research briefing with external sources
 
     Returns:
         BytesIO buffer containing PDF
@@ -92,7 +94,7 @@ def generate_consortium_pdf(
         # Fallback to legacy PDF generation
         return generate_legacy_pdf(
             query, context, agent_responses, tensions,
-            final_recommendation, convergence_status
+            final_recommendation, convergence_status, research_briefing
         )
 
     buffer = BytesIO()
@@ -286,20 +288,32 @@ def generate_consortium_pdf(
     ))
     story.append(Spacer(1, 0.2))
 
-    # List all agent responses
+    # List all agent responses with full details
     for agent_id, response in agent_responses.items():
         agent_name = AGENT_DISPLAY_NAMES.get(agent_id, agent_id)
         rating = response.get('rating', 'ACCEPT')
         confidence = response.get('confidence', 0.0)
         reasoning = response.get('reasoning', '')
+        attack_vector = response.get('attack_vector', '')
+        mitigation_plan = response.get('mitigation_plan', '')
 
-        story.append(build_subsection_header(agent_name, styles))
-        story.append(build_body_text(
-            f"Rating: {rating} | Confidence: {confidence:.0%}",
-            styles,
-            compact=True
-        ))
-        story.append(build_body_text(reasoning, styles, compact=True))
+        # Agent header with rating badge
+        story.extend(build_rating_badge(agent_name, rating, confidence, styles))
+
+        # Reasoning
+        if reasoning:
+            story.append(build_body_text(reasoning, styles, compact=True))
+
+        # Attack vector (if present)
+        if attack_vector:
+            story.append(build_body_text("Key Concern:", styles, compact=True))
+            story.append(build_body_text(attack_vector, styles, compact=True))
+
+        # Mitigation plan (if present)
+        if mitigation_plan:
+            story.append(build_body_text("Mitigation Strategy:", styles, compact=True))
+            story.append(build_body_text(mitigation_plan, styles, compact=True))
+
         story.append(Spacer(1, 0.15))
 
     story.append(PageBreak())
@@ -336,7 +350,55 @@ def generate_consortium_pdf(
 
     story.append(PageBreak())
 
-    # ===== APPENDIX C: METHODOLOGY =====
+    # ===== APPENDIX C: EXTERNAL SOURCES =====
+    if research_briefing:
+        story.append(build_section_header("Appendix C: External Sources", styles))
+        story.append(Spacer(1, 0.2))
+
+        story.append(build_body_text(
+            "This appendix lists the external sources consulted by The Scout agent during "
+            "the initial research phase and during report compilation.",
+            styles
+        ))
+        story.append(Spacer(1, 0.2))
+
+        # Extract sources from research briefing
+        exec_summary = research_briefing.get('executive_summary', '')
+        searches_executed = research_briefing.get('searches_executed', 0)
+
+        if exec_summary:
+            story.append(build_subsection_header("Research Summary:", styles))
+            story.append(build_body_text(exec_summary, styles))
+            story.append(Spacer(1, 0.2))
+
+        # Show agent briefings with sources
+        agent_briefings = research_briefing.get('agent_briefings', {})
+        if agent_briefings:
+            story.append(build_subsection_header("Sources by Agent Domain:", styles))
+            story.append(Spacer(1, 0.1))
+
+            from src.consortium.utils.chapter_organizer import AGENT_DISPLAY_NAMES
+
+            for agent_id, briefing in agent_briefings.items():
+                agent_name = AGENT_DISPLAY_NAMES.get(agent_id, agent_id)
+                sources = briefing.get('sources', [])
+
+                if sources:
+                    story.append(build_body_text(f"• {agent_name}:", styles, compact=True))
+                    for source in sources:
+                        story.append(build_body_text(f"  - {source}", styles, compact=True))
+                    story.append(Spacer(1, 0.05))
+
+        # Show total searches executed
+        story.append(Spacer(1, 0.2))
+        story.append(build_body_text(
+            f"Total external searches executed: {searches_executed}",
+            styles
+        ))
+
+        story.append(PageBreak())
+
+    # ===== APPENDIX D: METHODOLOGY =====
     decision_provenance = final_recommendation.get('decision_provenance', {})
     methodology = generate_methodology_appendix(convergence_status, decision_provenance)
 
@@ -367,12 +429,14 @@ def generate_legacy_pdf(
     agent_responses: Dict[str, Any],
     tensions: List[Dict[str, Any]],
     final_recommendation: Dict[str, Any],
-    convergence_status: Dict[str, Any]
+    convergence_status: Dict[str, Any],
+    research_briefing: Optional[Dict[str, Any]] = None
 ) -> BytesIO:
     """
     Legacy PDF generation (fallback if utilities not available).
 
     This is the original implementation preserved for backward compatibility.
+    Note: research_briefing parameter is accepted but not used in legacy mode.
     """
     from reportlab.lib.pagesizes import A4
     from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle

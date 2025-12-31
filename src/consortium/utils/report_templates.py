@@ -69,11 +69,14 @@ The European Consortium has completed {iteration_count} round(s) of deliberation
             owner = action.get('owner', 'Executive Team')
             details = action.get('details', '')
 
-            summary += f"{i}. {action_text}\n"
-            summary += f"   Owner: {owner}\n"
+            # Format action title as a subsection header (ends with colon)
+            summary += f"{i}. {action_text}:\n\n"
+            # Format details and owner as body text
+            detail_parts = []
             if details:
-                summary += f"   Details: {details}\n"
-            summary += "\n"
+                detail_parts.append(details)
+            detail_parts.append(f"Responsible: {owner}")
+            summary += " ".join(detail_parts) + "\n\n"
 
     # Add risk assessment
     summary += generate_risk_assessment(final_recommendation, convergence_status)

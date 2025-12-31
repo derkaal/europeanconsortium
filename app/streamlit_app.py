@@ -994,7 +994,8 @@ if analyze_button:
                             ),
                             "convergence_status": result.get(
                                 "convergence_status", {}
-                            )
+                            ),
+                            "research_briefing": result.get("research_briefing")
                         }
                         
                         # Display success
@@ -1145,7 +1146,8 @@ if st.session_state.analysis_results and PDF_AVAILABLE:
                 agent_responses=results['agent_responses'],
                 tensions=results['tensions'],
                 final_recommendation=results['final_recommendation'],
-                convergence_status=results['convergence_status']
+                convergence_status=results['convergence_status'],
+                research_briefing=results.get('research_briefing')
             )
             
             st.download_button(

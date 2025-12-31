@@ -34,6 +34,7 @@ class ConsortiumState(TypedDict, total=False):
         convergence_status: Convergence check results
         final_recommendation: Final synthesized recommendation
         iteration_count: Number of iterations performed
+        max_iterations: Maximum iterations before forced convergence (default: 5)
         cla_review: CLA temporal robustness review
         cla_gate_status: Status of CLA gate (OPEN/CLOSED/PENDING)
         memory_retrievals: Similar historical cases retrieved before agent execution
@@ -52,6 +53,7 @@ class ConsortiumState(TypedDict, total=False):
     convergence_status: Dict[str, Any]
     final_recommendation: Dict[str, Any]
     iteration_count: int
+    max_iterations: int  # Maximum iterations before forced convergence
     # CLA fields
     cla_review: Optional[CLAReview]
     cla_gate_status: Literal["OPEN", "CLOSED", "PENDING"]
@@ -67,13 +69,15 @@ class ConsortiumState(TypedDict, total=False):
 
 def create_initial_state(
     query: str,
-    context: Optional[Dict[str, Any]] = None
+    context: Optional[Dict[str, Any]] = None,
+    max_iterations: int = 5
 ) -> ConsortiumState:
     """Create initial state for consortium graph.
 
     Args:
         query: User's query
         context: Optional additional context
+        max_iterations: Maximum iterations before forced convergence (default: 5)
 
     Returns:
         Initial consortium state
@@ -87,6 +91,7 @@ def create_initial_state(
         convergence_status={},
         final_recommendation={},
         iteration_count=0,
+        max_iterations=max_iterations,
         cla_review=None,
         cla_gate_status="PENDING",
         memory_retrievals=[],

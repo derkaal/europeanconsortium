@@ -307,19 +307,20 @@ class TieredLLMProvider:
             try:
                 # Create client instance with specific configuration
                 client_class = self.clients[attempt_provider]
-                
-                # Shorter timeout for Mistral to fail fast and fallback
-                timeout = 30 if attempt_provider == "mistral" else 60
-                
+
+                # FIXED: Give Mistral same timeout/retries to handle SSL errors
+                # SSL handshake failures need retries at the httpx level
+                timeout = 60  # Uniform timeout for all providers
+
                 client = client_class(
                     model=attempt_config["model"],
                     temperature=attempt_config.get("temperature", 0.7),
                     max_tokens=attempt_config.get("max_tokens", 4096),
                     timeout=timeout,
-                    max_retries=1 if attempt_provider == "mistral" else 2
+                    max_retries=3  # Increased from 1-2 to 3 for SSL error recovery
                 )
 
-                # Invoke
+                # Invoke with detailed error logging
                 response = client.invoke(messages)
                 content = response.content
 

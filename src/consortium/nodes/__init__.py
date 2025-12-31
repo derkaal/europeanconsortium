@@ -11,6 +11,11 @@ from .architect_revision import architect_revision_node
 from .scout_node import create_scout_node, inject_briefing_into_agent_context
 from .advantage import advantage_analysis_node
 
+# Cascade workflow nodes (Proposal-Critique-Transformation)
+from .founder_provocation import founder_provocation_node
+from .breaker_critique import breaker_critique_node
+from .alchemist_transformation import alchemist_transformation_node
+
 __all__ = [
     "router_node",
     "agent_executor_node",
@@ -24,4 +29,8 @@ __all__ = [
     "create_scout_node",
     "inject_briefing_into_agent_context",
     "advantage_analysis_node",
+    # Cascade nodes
+    "founder_provocation_node",
+    "breaker_critique_node",
+    "alchemist_transformation_node",
 ]

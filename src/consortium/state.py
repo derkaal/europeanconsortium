@@ -43,6 +43,9 @@ class ConsortiumState(TypedDict, total=False):
         research_briefing: Scout research briefing with current intelligence
         scout_completed: Whether Scout research completed successfully
         scout_error: Error message if Scout failed
+        draft_strategy: Founder's aggressive proposal (cascade mode)
+        breaker_constraints: Collected constraints from critique agents (cascade mode)
+        reframed_opportunities: Alchemist's constraint-to-opportunity transformations (cascade mode)
     """
     query: str
     context: Dict[str, Any]
@@ -65,6 +68,10 @@ class ConsortiumState(TypedDict, total=False):
     research_briefing: Optional[Dict[str, Any]]  # Scout research briefing
     scout_completed: bool  # Whether Scout completed successfully
     scout_error: Optional[str]  # Scout error message if failed
+    # Cascade workflow fields (Proposal-Critique-Transformation)
+    draft_strategy: Optional[str]  # Founder's aggressive proposal
+    breaker_constraints: List[Dict[str, Any]]  # Collected constraints from critique agents
+    reframed_opportunities: List[Dict[str, Any]]  # Alchemist's transformations
 
 
 def create_initial_state(
@@ -99,5 +106,8 @@ def create_initial_state(
         retrieval_metadata=None,
         research_briefing=None,
         scout_completed=False,
-        scout_error=None
+        scout_error=None,
+        draft_strategy=None,
+        breaker_constraints=[],
+        reframed_opportunities=[]
     )

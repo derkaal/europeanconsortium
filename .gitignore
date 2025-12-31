@@ -54,3 +54,6 @@ Thumbs.db
 # Chroma vector store
 chroma_db/
 *.chroma
+
+# Test outputs
+test_output.pdf

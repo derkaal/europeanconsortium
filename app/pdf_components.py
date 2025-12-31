@@ -394,13 +394,14 @@ def build_action_items_table(action_items: List[Dict[str, Any]],
 
 
 def build_convergence_metrics_table(convergence_status: Dict[str, Any],
-                                    styles: Dict) -> Table:
+                                    styles: Dict, agent_responses: Dict[str, Any] = None) -> Table:
     """
     Build convergence metrics summary table.
 
     Args:
         convergence_status: Convergence status data
         styles: Style dictionary
+        agent_responses: Optional agent responses for accurate block/warn counts
 
     Returns:
         Table element
@@ -410,8 +411,24 @@ def build_convergence_metrics_table(convergence_status: Dict[str, Any],
     iteration_count = convergence_status.get('iteration_count', 1)
     gate_status = convergence_status.get('gate_status', {})
 
-    block_count = gate_status.get('block_count', 0)
-    warn_count = gate_status.get('warn_count', 0)
+    # Count blocks and warns more accurately
+    # First try from gate_status tier blocks
+    tier1_blocks = gate_status.get('tier1_blocks', [])
+    tier2_blocks = gate_status.get('tier2_blocks', [])
+    tier3_blocks = gate_status.get('tier3_blocks', [])
+    philosopher_blocks = gate_status.get('philosopher_blocks', [])
+
+    # Total blocks from tiers
+    block_count = len(tier1_blocks) + len(tier2_blocks) + len(tier3_blocks) + len(philosopher_blocks)
+
+    # If no tier blocks and we have agent_responses, count from there
+    if block_count == 0 and agent_responses:
+        block_count = sum(1 for r in agent_responses.values() if r.get('rating') == 'BLOCK')
+
+    # Warn count from convergence_status or agent_responses
+    warn_count = convergence_status.get('warn_ratings', 0)
+    if warn_count == 0 and agent_responses:
+        warn_count = sum(1 for r in agent_responses.values() if r.get('rating') == 'WARN')
 
     # Build table data
     table_data = [

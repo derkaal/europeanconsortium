@@ -1135,6 +1135,110 @@ if analyze_button:
                         st.error(f"Error running consortium: {str(e)}")
                         st.exception(e)
 
+# Display saved results if they exist (persists after page reload)
+if st.session_state.analysis_results and not analyze_button:
+    st.divider()
+    st.header("📊 Analysis Results")
+
+    saved_results = st.session_state.analysis_results
+
+    # Display agent responses
+    st.subheader("🎭 Agent Deliberation")
+    agent_names = {
+        "sovereign": "🛡️ Sovereign",
+        "intelligence_sovereign": "🤖 Intelligence Sovereign",
+        "economist": "💰 Economist",
+        "jurist": "⚖️ Jurist",
+        "architect": "🏗️ Architect",
+        "ecosystem": "🌱 Eco-System",
+        "philosopher": "🧠 Philosopher",
+        "ethnographer": "🌍 Ethnographer",
+        "technologist": "🔒 Technologist",
+        "consumer_voice": "👥 Consumer Voice",
+        "alchemist": "💎 Alchemist",
+        "founder": "🚀 Founder",
+        "cla": "🧟 CLA (Conditionality & Leverage)"
+    }
+
+    rating_colors = {
+        'BLOCK': 'block',
+        'WARN': 'warn',
+        'ACCEPT': 'accept',
+        'ENDORSE': 'endorse'
+    }
+
+    cols = st.columns(3)
+    for i, (agent_id, response) in enumerate(saved_results.get("agent_responses", {}).items()):
+        with cols[i % 3]:
+            color = rating_colors.get(response.get('rating', 'ACCEPT'), 'accept')
+            st.markdown(f"""
+            <div class="agent-card {color}-card">
+                <h4>{agent_names.get(agent_id, agent_id)}</h4>
+                <p><strong>Rating:</strong> {response.get('rating', 'N/A')}</p>
+                <p><strong>Confidence:</strong> {response.get('confidence', 0):.0%}</p>
+            </div>
+            """, unsafe_allow_html=True)
+
+            with st.expander("📋 Full Reasoning"):
+                st.write(response.get('reasoning', 'No reasoning provided'))
+                if response.get('mitigation_plan'):
+                    st.write("**Mitigation:**")
+                    st.write(response['mitigation_plan'])
+
+    # Display tensions if any
+    if saved_results.get('tensions'):
+        st.subheader("⚡ Tensions Detected & Resolved")
+        for tension in saved_results['tensions']:
+            st.markdown(f"""
+            <div class="tension-box">
+                <h4>{tension.get('agents', 'Unknown')} Tension</h4>
+                <p><strong>Conflict:</strong> {tension.get('description', 'N/A')}</p>
+                <p><strong>Resolution:</strong> {tension.get('resolution', 'N/A')}</p>
+                <p><strong>Status:</strong> {tension.get('status', 'Resolved')}</p>
+            </div>
+            """, unsafe_allow_html=True)
+
+    # Display final recommendation
+    st.subheader("📊 Final Recommendation")
+    conv = saved_results.get('convergence_status', {})
+    if conv.get('converged', False):
+        st.success("**Rating: CONVERGED**")
+    else:
+        st.warning("**Rating: ESCALATED TO HUMAN**")
+
+    positive_pct = conv.get('positive_percentage', 0)
+    iteration_count = conv.get('iteration_count', saved_results.get('iteration_count', 1))
+    col1, col2 = st.columns(2)
+    with col1:
+        st.metric("Consensus", f"{positive_pct:.0f}%")
+    with col2:
+        st.metric("Iterations", iteration_count)
+
+    rec = saved_results.get('final_recommendation', {})
+    if rec.get('recommendation'):
+        st.markdown("### Summary")
+        st.markdown(rec['recommendation'])
+
+    if rec.get('action_items'):
+        st.markdown('### "Yes, If" Conditions')
+        for item in rec['action_items']:
+            priority_emoji = {
+                "HIGH": "🔴",
+                "MEDIUM": "🟡",
+                "LOW": "🟢",
+                "CRITICAL": "🔴"
+            }.get(item.get('priority', 'MEDIUM'), "⚪")
+
+            action_text = item.get('action', '')
+            action_preview = action_text[:80] + "..." if len(action_text) > 80 else action_text
+
+            with st.expander(f"{priority_emoji} {action_preview}", expanded=False):
+                st.markdown(f"**Action:** {action_text}")
+                if item.get('owner'):
+                    st.markdown(f"**Owner:** {item['owner']}")
+                if item.get('details'):
+                    st.markdown(f"**Details:** {item['details']}")
+
 # PDF Export Button
 if st.session_state.analysis_results and PDF_AVAILABLE:
     st.divider()

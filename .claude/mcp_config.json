@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "tavily": {
+      "url": "https://mcp.tavily.com/mcp/?tavilyApiKey=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",
+      "transport": "sse",
+      "description": "Tavily search API for research and web intelligence"
+    }
+  }
+}

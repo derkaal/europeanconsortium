@@ -945,7 +945,10 @@ if analyze_button:
                         }
 
                         # Stream through graph execution
-                        for chunk in graph.stream(initial_state):
+                        # Set recursion_limit higher to handle complex tension resolution
+                        # Default is 25, we set it to 50 to allow for multiple tension cycles
+                        config = {"recursion_limit": 50}
+                        for chunk in graph.stream(initial_state, config=config):
                             # chunk is a dict with node_name: output
                             for node_name, output in chunk.items():
                                 display_name = node_names.get(node_name, f"🔧 {node_name}")
@@ -988,7 +991,7 @@ if analyze_button:
                             "query": query,
                             "context": context,
                             "agent_responses": result.get("agent_responses", {}),
-                            "tensions": result.get("resolved_tensions", []),
+                            "tensions": result.get("active_tensions", []),
                             "final_recommendation": result.get(
                                 "final_recommendation", {}
                             ),

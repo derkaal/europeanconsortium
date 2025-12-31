@@ -131,12 +131,18 @@ class MemoryManager:
         # Prepare metadata for filtering
         # Note: Chroma metadata values must be str, int, float, or bool
         # Complex objects must be JSON-serialized
+
+        # FIXED: Handle None values for user_feedback and outcome
+        # Using `or {}` to provide default dict when value is explicitly None
+        user_feedback = case.get("user_feedback") or {}
+        outcome = case.get("outcome") or {}
+
         metadata = {
             "timestamp": case["timestamp"].isoformat() if isinstance(case["timestamp"], datetime) else str(case["timestamp"]),
             "agents_engaged": json.dumps(case.get("agents_engaged", [])),
-            "quality_score": float(case.get("user_feedback", {}).get("quality_score", 0.0)),
-            "outcome_status": case.get("outcome", {}).get("status", "not_implemented"),
-            "alignment_score": float(case.get("outcome", {}).get("alignment_score") or 0.0),
+            "quality_score": float(user_feedback.get("quality_score", 0.0)),
+            "outcome_status": outcome.get("status", "not_implemented"),
+            "alignment_score": float(outcome.get("alignment_score") or 0.0),
             "query_length": len(case["query"]),
             "industry": case.get("context", {}).get("industry", "unknown"),
             # Feature 5: Add fingerprint metadata

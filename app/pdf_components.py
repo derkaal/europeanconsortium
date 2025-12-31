@@ -92,9 +92,9 @@ def create_custom_styles():
         fontName='Helvetica-Bold'
     ))
 
-    # Body text
+    # Body text (custom to avoid conflict with base stylesheet)
     styles.add(ParagraphStyle(
-        name='BodyText',
+        name='CustomBodyText',
         parent=styles['Normal'],
         fontSize=10,
         textColor=colors.HexColor('#1a1a1a'),
@@ -272,7 +272,7 @@ def build_body_text(text: str, styles: Dict, compact: bool = False) -> Paragraph
     Returns:
         Paragraph element
     """
-    style = styles['BodyTextCompact'] if compact else styles['BodyText']
+    style = styles['BodyTextCompact'] if compact else styles['CustomBodyText']
 
     # Escape special characters and preserve formatting
     text = text.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
